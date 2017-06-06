@@ -5,7 +5,7 @@ import 'rxjs/add/operator/toPromise';
 
 @Injectable()
 export class ConfigService {
-    private runtimeType = window.appsvc.env.runtimeType;
+    private runtimeType = "Azure";// window.appsvc.env.runtimeType;
 
     isOnPrem(): boolean {
         return this.runtimeType === "OnPrem";

@@ -31,9 +31,9 @@ export class PortalService {
         this.setupOAuthObservable = new Subject<SetupOAuthResponse>();
         this.notificationStartStream = new Subject<NotificationStartedInfo>();
 
-        if (this.inIFrame()){
-            this.initializeIframe();
-        }
+        // if (this.inIFrame()){
+        //     this.initializeIframe();
+        // }
     }
 
     getStartupInfo(){

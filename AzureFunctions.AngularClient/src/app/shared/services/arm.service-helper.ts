@@ -4,7 +4,7 @@ import {Http, Headers, Response, Request} from '@angular/http';
 // Used so that the UserService can do initialization work without having to depend
 // on the ArmService which would create a circular dependency
 export class ArmServiceHelper {
-    public static armEndpoint = window.appsvc.env.azureResourceManagerEndpoint;
+    public static armEndpoint = '';//window.appsvc.env.azureResourceManagerEndpoint;
 
     public static getHeaders(token: string, sessionId?: string, etag?: string): Headers {
         const headers = new Headers();
