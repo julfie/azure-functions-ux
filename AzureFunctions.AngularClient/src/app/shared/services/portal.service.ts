@@ -51,7 +51,13 @@ export class PortalService {
 
         window.addEventListener(Verbs.message, this.iframeReceivedMsg.bind(this), false);
 
-        let appsvc = window.appsvc;
+        let appsvc = {
+            env: {
+                hostName: "",
+                runtimeType: "",
+                azureResourceManagerEndpoint: ""
+            }
+        };//window.appsvc;
         let getStartupInfoObj : GetStartupInfo = {
             iframeHostName : appsvc && appsvc.env && appsvc.env.hostName ? appsvc.env.hostName : null
         };

@@ -46,7 +46,7 @@ export class SlotsService {
             let containerPrefix = slotName.length < 59 ? slotName : slotName.substr(0, 59);
             currentAppSettings.push({
                 name: Constants.contentShareConfigSettingsName,
-                value: `${slotName}${tGuid}`
+                value: `${containerPrefix.toLocaleLowerCase()}${tGuid}`
             });
 
             // create payload

@@ -1,3 +1,6 @@
+import { FunctionInfo } from './../shared/models/function-info';
+import { FunctionApp } from './../shared/function-app';
+import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
 import { AppModule } from './../app.module';
 import { BusyStateComponent } from './../busy-state/busy-state.component';
@@ -47,10 +50,19 @@ describe('FunctionKeysComponent', () => {
     expect(component.keys).toBeTruthy();
     expect(component['functionStream']).toBeTruthy();
     expect(component['functionAppStream']).toBeTruthy();
-    const functionApp: any = {
-      getFunctionHostKeys: () => Observable.of({keys: [], links: []})
+  });
+
+  it('should handle new FunctionInfo getting pushed to it', () => {
+    let functionAppStream: Subject<FunctionApp> = component['functionAppStream'];
+    let functionStream: Subject<FunctionInfo> = component['functionStream'];
+    let functionApp: any = {
+      getFunctionKeys: (functionInfo) => undefined
     };
-    component.functionApp = functionApp;
+
+    functionAppStream.next(functionApp);
+    functionStream.next(<any>{
+      functionApp: functionApp
+    });
   });
 
 });
