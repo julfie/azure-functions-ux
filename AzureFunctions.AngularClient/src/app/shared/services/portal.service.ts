@@ -238,6 +238,6 @@ export class PortalService {
     }
 
     private inIFrame() : boolean{
-        return window.parent !== window;
+        return window.parent !== window && window.location.pathname !== "/context.html";
     }
 }

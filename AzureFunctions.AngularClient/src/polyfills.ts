@@ -67,15 +67,7 @@ import 'zone.js/dist/zone';  // Included with Angular CLI.
  */
 // import 'intl';  // Run `npm install --save intl`.
 
-interface Environment{
-  hostName : string;
-  runtimeType : string;
-  azureResourceManagerEndpoint : string;
-}
-
-interface AppSvc{
-  env : Environment;
-}
+import './polyfills/window';
 
 declare global {
   interface ObjectConstructor {
@@ -103,10 +95,6 @@ declare global {
    * @return Formatted string.
    */
     format(...restArgs: any[]): string;
-  }
-
-  interface Window{
-    appsvc : AppSvc;
   }
 }
 
