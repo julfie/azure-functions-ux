@@ -101,6 +101,7 @@ namespace AzureFunctions
             if (!isFile              //skip auth for files
                 && runtimeType != RuntimeType.Standalone   // Skip auth for Standalone mode
                 && !isTryPageRequested  //when requesting /try users can be unauthenticated
+                && isAuthenticated
                 && !SecurityManager.TryAuthenticateRequest(context)) // and if the user is not loggedon
             {
                 if (isAuthenticated)
@@ -227,6 +228,10 @@ namespace AzureFunctions
             builder.RegisterType<PassThroughRequestManager>()
                 .As<IPassThroughRequestManager>()
                 .InstancePerRequest();
+
+            builder.RegisterType<StorageManager>()
+                .As<IStorageManager>()
+                .InstancePerRequest();
         }
 
         private void RegisterRoutes(HttpConfiguration config)
@@ -248,6 +253,15 @@ namespace AzureFunctions
             config.Routes.MapHttpRoute("diagnose-app", "api/diagnose/{*armId}", new { controller = "AzureFunctions", action = "Diagnose", authenticated = false }, new { verb = new HttpMethodConstraint(HttpMethod.Post.ToString()) });
 
             config.Routes.MapHttpRoute("passthrough", "api/passthrough", new { controller = "AzureFunctions", action = "PassThrough", authrnticated = true }, new { verb = new HttpMethodConstraint(HttpMethod.Post.ToString()) });
+
+            config.Routes.MapHttpRoute("get-app-ux-settings", "api/uxsettings/app/{*id}", new { controller = "UxSettings", action = "GetUxSettings", authenticated = false }, new { verb = new HttpMethodConstraint(HttpMethod.Get.ToString()) });
+            config.Routes.MapHttpRoute("get-function-ux-settings", "api/uxsettings/function/{*id}", new { controller = "UxSettings", action = "GetUxSettings", authenticated = false }, new { verb = new HttpMethodConstraint(HttpMethod.Get.ToString()) });
+
+            config.Routes.MapHttpRoute("add-or-update-app-graph", "api/uxsettings/app/graphs/{*id}", new { controller = "UxSettings", action = "AddOrUpdateGraph", authenticated = false }, new { verb = new HttpMethodConstraint(HttpMethod.Put.ToString()) });
+            config.Routes.MapHttpRoute("add-or-update-function-graph", "api/uxsettings/function/graphs/{*id}", new { controller = "UxSettings", action = "AddOrUpdateGraph", authenticated = false }, new { verb = new HttpMethodConstraint(HttpMethod.Put.ToString()) });
+
+            config.Routes.MapHttpRoute("delete-app-graph", "api/uxsettings/app/graphs/{*id}", new { controller = "UxSettings", action = "DeleteGraph", authenticated = false }, new { verb = new HttpMethodConstraint(HttpMethod.Delete.ToString()) });
+            config.Routes.MapHttpRoute("delete-function-graph", "api/uxsettings/function/graphs/{*id}", new { controller = "UxSettings", action = "DeleteGraph", authenticated = false }, new { verb = new HttpMethodConstraint(HttpMethod.Delete.ToString()) });
         }
     }
 }
