@@ -108,6 +108,7 @@ import { SlotsListComponent } from './slots-list/slots-list.component';
 import { SlotsService } from './shared/services/slots.service';
 import { SlotNewComponent } from './slot-new/slot-new.component';
 import { SearchBoxComponent } from './search-box/search-box.component';
+import { AppInsightsGraphsComponent } from './app-insights-graphs/app-insights-graphs.component';
 
 export function ArmServiceFactory(
     http: Http,
@@ -209,8 +210,9 @@ export class AppModule {
     CreateAppComponent,
     SlotsListComponent,
     SlotNewComponent,
-	EventHubComponent,
-	SearchBoxComponent
+    EventHubComponent,
+    SearchBoxComponent,
+    AppInsightsGraphsComponent
   ],
   imports: [
     FormsModule,
