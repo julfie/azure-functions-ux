@@ -177,6 +177,12 @@ export class MonacoEditorDirective {
                 });
                 that._globalStateService.clearBusyState();
 
+                // TODO: that._editor.addcommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_T, () => {
+                    // open existing function in new tab
+                    // if dirty ask to save? or save for them?
+                    // change view to to open in new tab
+                // });
+
             });
         };
 
