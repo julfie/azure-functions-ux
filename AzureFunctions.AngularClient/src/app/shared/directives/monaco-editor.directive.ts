@@ -162,7 +162,7 @@ export class MonacoEditorDirective {
                     value: that._content,
                     language: that._language,
                     readOnly: that._disabled,
-                    lineHeight: 17
+                    lineHeight: 17,
                 });
 
                 that._editor.onDidChangeModelContent(() => {
