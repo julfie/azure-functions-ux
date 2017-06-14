@@ -34,8 +34,8 @@ export class PortalService {
 
         if (this.inIFrame()){ // TODO: example=> && !inATab) {
             this.initializeIframe();
-        } else { // TODO: example=> if(inATab){
-            this.initializeTab();
+        }else { // TODO: example=> if(inATab){
+            // TODO: example=> this.initializeTab();
         }
     }
 
