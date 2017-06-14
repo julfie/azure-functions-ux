@@ -32,8 +32,10 @@ export class PortalService {
         this.setupOAuthObservable = new Subject<SetupOAuthResponse>();
         this.notificationStartStream = new Subject<NotificationStartedInfo>();
 
-        if (PortalService.inIFrame()){
+        if (this.inIFrame()){ // TODO: example=> && !inATab) {
             this.initializeIframe();
+        } else { // TODO: example=> if(inATab){
+            this.initializeTab();
         }
     }
 
