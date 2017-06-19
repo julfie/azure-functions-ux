@@ -85,6 +85,16 @@
                                     {{ 'cancel' | translate }}
                                 </button>
                             </span>
+                            
+                            <!-- Open the iFrame in a new tab -->
+                            <!-- TODO: strip extra info (only one tab) -->
+                            <span>
+                                <button *ngIf="!openInTab"
+                                        class="custom-button"
+                                        (click)="newTab()">
+                                    <i class="fa fa-external-link"></i>
+                                </button>
+                            </span>
 
                             <div style="flex-grow:1"></div>
 
@@ -184,8 +194,7 @@
                                     (validChange)="onRunValid($event)"
                                     (disableTestData)="onDisableTestData($event)">
                                 </run-http>
-                                <!--OPENING IN A NEW TAB-->
-                                <!-- use js option (ts here) to open in new tab and use localstorage to communicate -->
+
                                 <div>
                                     <div class="control-label">{{ 'functionDev_requestBody' | translate }}</div>
                                     <div id="test_data" monacoEditor class="monaco"

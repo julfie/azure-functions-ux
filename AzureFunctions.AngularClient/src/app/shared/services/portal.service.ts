@@ -12,6 +12,8 @@ import {BroadcastEvent} from '../models/broadcast-event'
 import {UserService} from './user.service';
 import {AiService} from './ai.service';
 import {SetupOAuthRequest, SetupOAuthResponse} from '../../site/deployment-source/deployment';
+import {LocalStorageService} from './local-storage.service';
+import { SiteDescriptor } from "app/shared/resourceDescriptors";
 
 @Injectable()
 export class PortalService {
@@ -21,21 +23,25 @@ export class PortalService {
     private startupInfo: StartupInfo = null;
     private startupInfoObservable : ReplaySubject<StartupInfo>;
     private setupOAuthObservable : Subject<SetupOAuthResponse>;
-    private getAppSettingCallback: (appSettingName: string) => void;
+    private getAppSettingCallback : (appSettingName: string) => void;
     private shellSrc: string;
     private notificationStartStream : Subject<NotificationStartedInfo>;
+    private localStorage : Storage;
+
+    public resourceId : string;
 
     constructor(private _broadcastService : BroadcastService,
-     private _aiService: AiService) {
+                private _aiService : AiService) {
 
         this.startupInfoObservable = new ReplaySubject<StartupInfo>(1);
         this.setupOAuthObservable = new Subject<SetupOAuthResponse>();
         this.notificationStartStream = new Subject<NotificationStartedInfo>();
+        this.localStorage = window.localStorage;
 
-        if (this.inIFrame()){ // TODO: example=> && !inATab) {
-            this.initializeIframe();
-        }else { // TODO: example=> if(inATab){
-            // TODO: example=> this.initializeTab();
+        if (this.inIFrame()){ 
+            this.initializeIframe(); }
+        if(this.inTab()){
+            this.initializeTab();
         }
     }
 
@@ -50,8 +56,10 @@ export class PortalService {
 
     initializeIframe(): void {
 
-        let shellUrl = decodeURI(window.location.href);
-        this.shellSrc = Url.getParameterByName(shellUrl, "trustedAuthority");
+        this.shellSrc = window.location.search.match(/=(.+)/)[1];
+
+        window.addEventListener("storage", this.recieveStorageMessage.bind(this), false);
+
         window.addEventListener(Verbs.message, this.iframeReceivedMsg.bind(this), false);
 
         let appsvc = window.appsvc;
@@ -68,6 +76,55 @@ export class PortalService {
                 this.logMessage(LogEntryLevel.Error, error.details);
             }
         });
+    }
+
+    initializeTab(): void {
+
+
+        //listener to localStorage
+        window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
+
+        // Hey parent, I'm ready
+        window.localStorage.setItem("ready", "ready");
+        // remove entry
+        window.localStorage.removeItem("ready");
+
+    }
+
+
+
+    recieveStorageMessage(message : StorageEvent){
+        console.log(message);
+        message.bubbles
+
+        // If child tab is ready
+        if (message.key == "ready"){
+
+            let appsvc = window.appsvc;
+            let getStartupInfoObj : GetStartupInfo = {
+                iframeHostName : appsvc && appsvc.env && appsvc.env.hostName ? appsvc.env.hostName : null
+            };
+
+            //send startup info without resourceId
+            window.localStorage.setItem("startup", JSON.stringify(getStartupInfoObj));
+            // remove entry
+            window.localStorage.removeItem("startup");
+            
+        }
+        // else if receiving startup info
+        else if (message.key == "startup"){
+        //      get resourceId from window.location.url
+                this.resourceId = window.location.href.split("&")[1];
+                let descriptor : SiteDescriptor;
+                descriptor = new SiteDescriptor(this.resourceId)
+
+        //      set resourceId in startupInfo object
+                this.startupInfo.resourceId = descriptor.resourceId;
+        //      update startup info [ this.startupInfo.next(startInfo); ]
+                this.startupInfoObservable.next(this.startupInfo);
+                // this._userService.updateStartupInfo(this.startupInfo);
+        }
+
     }
 
     openBlade(bladeInfo : OpenBladeInfo, source : string){
@@ -242,5 +299,9 @@ export class PortalService {
 
     public static inIFrame() : boolean{
         return window.parent !== window && window.location.pathname !== "/context.html";
+    }
+
+    private inTab() : boolean{
+        return window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
     }
 }
