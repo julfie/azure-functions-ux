@@ -2,8 +2,10 @@
 <busy-state name='dashboard'></busy-state>
 
 <div id="content">
-    <side-nav (treeViewInfoEvent)="updateViewInfo($event)" [tryFunctionAppInput]="tryFunctionApp" ></side-nav>
-
+    <div *ngIf="!inTab">
+        <side-nav (treeViewInfoEvent)="updateViewInfo($event)" [tryFunctionAppInput]="tryFunctionApp" ></side-nav>
+    </div>
+    
     <div id="dashboard" *ngIf="!!viewInfo">
 
         <function-dev *ngIf="inTab" [selectedFunction]="selectedFunction"></function-dev>
