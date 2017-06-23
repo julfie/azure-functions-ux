@@ -73,6 +73,17 @@ export class SiteDescriptor extends Descriptor{
         }
     }
 
+    getResourceId() : string{
+        // "/subscriptions/ef90e930-9d7f-4a60-8a99-748e0eea69de/resourceGroups/AppServiceDemo/providers/Microsoft.Web/sites/andfunc1   /functions/ExternalTableCSharp1/files/run.csx"
+        // "/subscriptions/ef90e930-9d7f-4a60-8a99-748e0eea69de/resourceGroups/AppServiceDemo/providers/Microsoft.Web/sites/andfunc1/slots/staging /functions/ExternalTableCSharp1/files/run.csx"
+        let resource : string = `/subscriptions/${this.subscription}/resourceGroups/${this.resourceGroup}/providers/Microsoft.Web/sites/${this.site}`;
+        if (this.slot) {
+            let slotInfo : string = "/slots/${this.slots}";
+            resource.concat(slotInfo);
+        }
+        return resource
+    }
+
     getWebsiteId() : WebsiteId{
         if(!this._websiteId){
             let name = !this.slot ? this.site : `${this.site}(${this.slot})`;
