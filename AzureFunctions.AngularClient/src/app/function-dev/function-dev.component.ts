@@ -93,7 +93,7 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
 
     public inTab : boolean = window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
 
-    public addId : string;
+    public rID : string;
 
     public disabled: Observable<boolean>;
 
@@ -363,7 +363,11 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
         if (changes['selectedFunction']) {
             delete this.updatedTestContent;
             delete this.runResult;
-            this.functionSelectStream.next(changes['selectedFunction'].currentValue);
+
+            let selectedFunction = changes['selectedFunction'].currentValue;
+            if(selectedFunction){
+                this.functionSelectStream.next(selectedFunction);
+            }
             }
     }
 
@@ -538,8 +542,8 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
 
    newTab() {
         //open a new tab with the rousource information
-       this.addId = `/functions/${this.functionInfo.name}/files/${this.fileName}`
-       window.open(`https://localhost:44300/?tabbed=true&${this.addId}`, '_blank');
+       this.rID = `${this.functionApp.site.id}/functions/${this.functionInfo.name}/files/${this.fileName}`
+       window.open(`https://localhost:44300/?tabbed=true&${this.rID}`, '_blank');
     }
 
     cancelCurrentRun() {
