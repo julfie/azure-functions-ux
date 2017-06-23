@@ -40,24 +40,24 @@ export class MainComponent implements AfterViewInit {
     @Input() tryFunctionApp: FunctionApp;
 
     constructor(private _userService : UserService, private _globalStateService : GlobalStateService, private _cacheService : CacheService,
-                        _http? : Http, _translateService? : TranslateService, _broadcastService? : BroadcastService, 
-                        _armService? : ArmService, _languageService? : LanguageService, _authZService? : AuthzService,
-                        _configService? : ConfigService, _slotsService? : SlotsService, _aiService? : AiService) {
-        this.inIFrame = _userService.inIFrame;
-        // this.inTab = _userService.inTab; // are we in a tab
-        // this.inTab = window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self; //check if in tab i.e.
+                        _ngHttp : Http, _translateService : TranslateService, _broadcastService : BroadcastService, 
+                        _armService : ArmService, _languageService : LanguageService, _authZService : AuthzService,
+                        _configService : ConfigService, _slotsService : SlotsService, _aiService : AiService) {
 
-        if (this.inTab) {
+        this.inIFrame = _userService.inIFrame;
+        this.inTab = _userService.inTab; // are we in a tab
+
+        if (this.inTab && this._userService.getStartupInfo() !== null) {
             this._userService.getStartupInfo()
             .subscribe(info =>{
-                // SiteDescriptor
+                // SiteDescriptor 
                 let siteDescriptor : SiteDescriptor = new SiteDescriptor(info.resourceId);
-                siteDescriptor 
-                this._cacheService.getArm(siteDescriptor.site)
+
+                this._cacheService.getArm(siteDescriptor.getResourceId())
                 .subscribe(response =>{
-                    let site = <ArmObj<Site>>response.json()
+                    let site = <ArmObj<Site>>response.json();
                     let functionApp : FunctionApp = new FunctionApp(site, 
-                                                                    _http, 
+                                                                    _ngHttp, 
                                                                     _userService, 
                                                                     _globalStateService, 
                                                                     _translateService, 
@@ -71,17 +71,19 @@ export class MainComponent implements AfterViewInit {
                                                                     _slotsService);
                     functionApp.getFunctions()
                     .subscribe(functions =>{
-                        // find the function that matches your resourceId
+                        console.log(info.resourceId);
                         let fnDescriptor : FunctionDescriptor = new FunctionDescriptor(info.resourceId);
                         let targetName : String = fnDescriptor.functionName
+
+                        // find the function that matches your resourceId
                         for (var i = 0; i < functions.length; i++) {
                             var fn = functions[i];
                             if (fn.name == targetName){
                                 // Pass that function to the editor
                                 this.selectedFunction = fn;
+                                break;
                             }
-                        }
-                        
+                        }                        
                     })
                 })
             })
