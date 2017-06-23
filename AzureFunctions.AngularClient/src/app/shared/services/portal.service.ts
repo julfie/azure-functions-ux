@@ -99,11 +99,10 @@ export class PortalService {
         window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
 
         if (this.inTab() && this.guidId == null) {
-            // Hey parent, I'm ready
-            // window.localStorage.setItem("id needed", null);
-            // remove entry
-           this.returnMessage(null, "get-id", null);
-            window.localStorage.removeItem("get-id");
+            // create own id and set
+            this.guidId = Guid.newTinyGuid();
+            //send id back to parent
+           this.returnMessage(this.guidId, "get-startup-info", null);
         }
     }
 
@@ -118,41 +117,25 @@ export class PortalService {
         console.log(item);
         if(this.inIFrame() && !this.inTab()){
             // if parent recieved new id call
-            if (item.key == "get-id") {
-                //send over new id and add startupinfo to dictionary
-                let newId : Guid = Guid.newTinyGuid();
-                
+            if (item.key == "get-startup-info") {
+                let id : Guid = msg.id;
+                //send over startupinfo
                 this.getStartupInfo()
                 .take(1)
                 .subscribe(info =>{
-                    let startup : StartupInfo = info;
-                    this.startupDict.set(newId, startup);
-                    this.returnMessage(newId, "open", null);
+                    let startup : StartupInfo = JSON.parse(JSON.stringify(info));
+                    startup.resourceId = "";
+                    this.returnMessage(id, "startup-info", startup);
                 })
             }
-
-            // the portal recieves the ready signal
-            else if (item.key == "ready") {
-                //get the guid and startup info for the child
-                let targetGuid : Guid = msg.id;
-                let startupInfo: StartupInfo = this.startupDict.get(targetGuid);
-
-                this.returnMessage(targetGuid, "startup info", startupInfo);
-            }
         }
+
         else if(this.inTab()){
-            
-            // if child tab recieves new guid info
-            if (item.key == "open" && this.guidId === null) {
-                this.guidId = msg.id;
-
-                this.returnMessage(this.guidId, "ready", null);
-            }
-
             //if the startup message is meant for the child tab
-            else if (msg.id == this.guidId) {
+            if (msg.id == this.guidId && item.key == "startup-info") {
                 // get new startup info and update
                 let startupInfo : StartupInfo = msg.data;
+                startupInfo.resourceId = window.location.href.split("&")[1];
                 this.startupInfoObservable.next(startupInfo);
             }
         }
