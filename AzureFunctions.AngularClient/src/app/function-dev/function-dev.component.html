@@ -87,8 +87,8 @@
                             
                             <!-- Open the iFrame in a new tab -->
                             <!-- TODO: strip extra info (only one tab) -->
-                            <span>
-                                <button *ngIf="!openInTab"
+                            <span *ngIf="!inTab">
+                                <button *ngIf="!inTab"
                                         class="custom-button"
                                         (click)="newTab()">
                                     <i class="fa fa-external-link"></i>
