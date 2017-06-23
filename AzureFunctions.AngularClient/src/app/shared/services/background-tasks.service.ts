@@ -35,7 +35,7 @@ export class BackgroundTasksService {
         private _aiService: AiService,
         private _applicationRef: ApplicationRef,
         private _translateService: TranslateService) {
-            if (!this._userService.inIFrame) {
+            if (!this._userService.inIFrame && !this._userService.inTab) {
                 this.runNonIFrameTasks();
             }
             if (this.isIE()) {
