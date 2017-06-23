@@ -48,7 +48,7 @@ export class UserService {
             resourceId: null
         };
 
-        if (this.inIFrame) {
+        if (this.inIFrame || this.inTab) {
             this._portalService.getStartupInfo()
                 .mergeMap(info => {
                     return Observable.zip(
