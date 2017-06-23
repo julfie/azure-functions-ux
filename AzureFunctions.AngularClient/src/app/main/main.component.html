@@ -3,7 +3,7 @@
 
 <div id="content">
     <div *ngIf="!inTab">
-        <side-nav (treeViewInfoEvent)="updateViewInfo($event)" [tryFunctionAppInput]="tryFunctionApp" ></side-nav>
+        <side-nav (treeViewInfoEvent)="updateViewInfo($event)" [tryFunctionAppInput]="tryFunctionApp" *ngIf="!inTab"></side-nav>
     </div>
     
     <div id="dashboard" *ngIf="!!viewInfo">
