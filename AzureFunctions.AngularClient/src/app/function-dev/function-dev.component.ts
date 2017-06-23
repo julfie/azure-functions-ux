@@ -91,9 +91,9 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
 
     public isStandalone : boolean;
 
-    public openInTab : boolean = false;
+    public inTab : boolean = window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
 
-    public resourceId : string;
+    public addId : string;
 
     public disabled: Observable<boolean>;
 
@@ -537,10 +537,9 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
     }
 
    newTab() {
-        //open a new tab with the rousource information (site id, function name, file name)
-       this.resourceId = `${this.functionApp.site.id}/functions/${this.functionInfo.name}/files/${this.fileName}`
-       window.open(`https://localhost:44300/?tabbed=true&${this.resourceId}`, '_blank');
-
+        //open a new tab with the rousource information
+       this.addId = `/functions/${this.functionInfo.name}/files/${this.fileName}`
+       window.open(`https://localhost:44300/?tabbed=true&${this.addId}`, '_blank');
     }
 
     cancelCurrentRun() {
