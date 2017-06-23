@@ -14,10 +14,21 @@ import {AiService} from './ai.service';
 import {SetupOAuthRequest, SetupOAuthResponse} from '../../site/deployment-source/deployment';
 import {LocalStorageService} from './local-storage.service';
 import { SiteDescriptor } from "app/shared/resourceDescriptors";
+// import { MessageLoad } from "app/shared/models/localStorage/local-storage";
+import { Guid } from "app/shared/Utilities/Guid";
+
+class MessageLoad {
+    id : Guid;
+    verb : string;
+    data : any;
+}
 
 @Injectable()
 export class PortalService {
+    public guidId: Guid = null;
     public sessionId = "";
+
+    public startupDict : Map<Guid,StartupInfo> = new Map<Guid,StartupInfo>();
 
     private portalSignature: string = "FxAppBlade";
     private startupInfo: StartupInfo = null;
@@ -41,7 +52,10 @@ export class PortalService {
         if (this.inIFrame()){ 
             this.initializeIframe(); }
         if(this.inTab()){
-            this.initializeTab();
+            setTimeout(() =>{
+                this.initializeTab();
+
+            }, 5000);
         }
     }
 
@@ -58,6 +72,7 @@ export class PortalService {
 
         this.shellSrc = window.location.search.match(/=(.+)/)[1];
 
+        console.log("Adding storage listener");
         window.addEventListener("storage", this.recieveStorageMessage.bind(this), false);
 
         window.addEventListener(Verbs.message, this.iframeReceivedMsg.bind(this), false);
@@ -80,51 +95,80 @@ export class PortalService {
 
     initializeTab(): void {
 
-
         //listener to localStorage
         window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
 
-        // Hey parent, I'm ready
-        window.localStorage.setItem("ready", "ready");
-        // remove entry
-        window.localStorage.removeItem("ready");
+        if (this.inTab() && this.guidId == null) {
+            // Hey parent, I'm ready
+            // window.localStorage.setItem("id needed", null);
+            // remove entry
+           this.returnMessage(null, "get-id", null);
+            window.localStorage.removeItem("get-id");
+        }
+    }
+
+    recieveStorageMessage(item : StorageEvent){
+
+        let msg : MessageLoad = JSON.parse(item.newValue);
+
+        if(!msg){
+            return;
+        }
+
+        console.log(item);
+        if(this.inIFrame() && !this.inTab()){
+            // if parent recieved new id call
+            if (item.key == "get-id") {
+                //send over new id and add startupinfo to dictionary
+                let newId : Guid = Guid.newTinyGuid();
+                
+                this.getStartupInfo()
+                .take(1)
+                .subscribe(info =>{
+                    let startup : StartupInfo = info;
+                    this.startupDict.set(newId, startup);
+                    this.returnMessage(newId, "open", null);
+                })
+            }
+
+            // the portal recieves the ready signal
+            else if (item.key == "ready") {
+                //get the guid and startup info for the child
+                let targetGuid : Guid = msg.id;
+                let startupInfo: StartupInfo = this.startupDict.get(targetGuid);
+
+                this.returnMessage(targetGuid, "startup info", startupInfo);
+            }
+        }
+        else if(this.inTab()){
+            
+            // if child tab recieves new guid info
+            if (item.key == "open" && this.guidId === null) {
+                this.guidId = msg.id;
+
+                this.returnMessage(this.guidId, "ready", null);
+            }
+
+            //if the startup message is meant for the child tab
+            else if (msg.id == this.guidId) {
+                // get new startup info and update
+                let startupInfo : StartupInfo = msg.data;
+                this.startupInfoObservable.next(startupInfo);
+            }
+        }
 
     }
 
+    private returnMessage(id : Guid, verb : string, data : any) {
+        // return the ready message with guid
+        let returnMessage : MessageLoad = new MessageLoad();
+        returnMessage.id = id;
+        returnMessage.verb = verb;
+        returnMessage.data = data;
 
-
-    recieveStorageMessage(message : StorageEvent){
-        console.log(message);
-        message.bubbles
-
-        // If child tab is ready
-        if (message.key == "ready"){
-
-            let appsvc = window.appsvc;
-            let getStartupInfoObj : GetStartupInfo = {
-                iframeHostName : appsvc && appsvc.env && appsvc.env.hostName ? appsvc.env.hostName : null
-            };
-
-            //send startup info without resourceId
-            window.localStorage.setItem("startup", JSON.stringify(getStartupInfoObj));
-            // remove entry
-            window.localStorage.removeItem("startup");
-            
-        }
-        // else if receiving startup info
-        else if (message.key == "startup"){
-        //      get resourceId from window.location.url
-                this.resourceId = window.location.href.split("&")[1];
-                let descriptor : SiteDescriptor;
-                descriptor = new SiteDescriptor(this.resourceId)
-
-        //      set resourceId in startupInfo object
-                this.startupInfo.resourceId = descriptor.resourceId;
-        //      update startup info [ this.startupInfo.next(startInfo); ]
-                this.startupInfoObservable.next(this.startupInfo);
-                // this._userService.updateStartupInfo(this.startupInfo);
-        }
-
+        // send and then remove
+        window.localStorage.setItem(verb, JSON.stringify(returnMessage));
+        window.localStorage.removeItem(verb);
     }
 
     openBlade(bladeInfo : OpenBladeInfo, source : string){
