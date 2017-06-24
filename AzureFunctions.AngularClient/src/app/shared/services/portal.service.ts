@@ -52,10 +52,7 @@ export class PortalService {
         if (this.inIFrame()){ 
             this.initializeIframe(); }
         if(this.inTab()){
-            setTimeout(() =>{
-                this.initializeTab();
-
-            }, 5000);
+            this.initializeTab();
         }
     }
 
