@@ -49,9 +49,10 @@ export class PortalService {
         this.notificationStartStream = new Subject<NotificationStartedInfo>();
         this.localStorage = window.localStorage;
 
-        if (this.inIFrame()){ 
-            this.initializeIframe(); }
-        if(this.inTab()){
+        if (PortalService.inIFrame()){ 
+            this.initializeIframe();
+        }
+        if(PortalService.inTab()){
             this.initializeTab();
         }
     }
@@ -95,7 +96,7 @@ export class PortalService {
         //listener to localStorage
         window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
 
-        if (this.inTab() && this.guidId == null) {
+        if (PortalService.inTab() && this.guidId == null) {
             // create own id and set
             this.guidId = Guid.newTinyGuid();
             //send id back to parent
@@ -112,7 +113,7 @@ export class PortalService {
         }
 
         console.log(item);
-        if(this.inIFrame() && !this.inTab()){
+        if(PortalService.inIFrame() && !PortalService.inTab()){
             // if parent recieved new id call
             if (item.key == "get-startup-info") {
                 let id : Guid = msg.id;
@@ -127,7 +128,7 @@ export class PortalService {
             }
         }
 
-        else if(this.inTab()){
+        else if(PortalService.inTab()){
             //if the startup message is meant for the child tab
             if (msg.id == this.guidId && item.key == "startup-info") {
                 // get new startup info and update
@@ -325,7 +326,7 @@ export class PortalService {
         return window.parent !== window && window.location.pathname !== "/context.html";
     }
 
-    private inTab() : boolean{
+    public static inTab() : boolean{
         return window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
     }
 }
