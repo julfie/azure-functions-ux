@@ -8,7 +8,7 @@
     
     <function-dev *ngIf="inTab" [selectedFunction]="selectedFunction"></function-dev>
 
-    <div id="dashboard" *ngIf="!!viewInfo">
+    <div id="dashboard" *ngIf="!!viewInfo" [ngClass]="{'padded' : true}">
 
         <apps-list [viewInfoInput]="viewInfo" *ngIf="trialExpired === false && dashboardType === 'apps'"></apps-list>
         <create-app [viewInfoInput]="viewInfo" *ngIf="trialExpired === false && dashboardType === 'createApp'"></create-app>
