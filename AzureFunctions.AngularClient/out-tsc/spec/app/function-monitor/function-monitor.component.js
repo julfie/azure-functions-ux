@@ -59,8 +59,6 @@ var FunctionMonitorComponent = (function () {
             var firstOfMonth = moment().startOf('month');
             _this.successAggregateHeading = _this._translateService.instant(portal_resources_1.PortalResources.functionMonitor_successAggregate) + " " + firstOfMonth.format("MMM Do");
             _this.errorsAggregateHeading = _this._translateService.instant(portal_resources_1.PortalResources.functionMonitor_errorsAggregate) + " " + firstOfMonth.format("MMM Do");
-            var host = fi.functionApp.site.name;
-            var hostId = !!host ? host : "";
             return fi.functionApp.getFunctionHostStatus()
                 .flatMap(function (host) { return _this._functionMonitorService.getDataForSelectedFunction(fi, host.id); })
                 .flatMap(function (data) {

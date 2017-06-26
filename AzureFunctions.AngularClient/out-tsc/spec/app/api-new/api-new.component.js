@@ -43,7 +43,7 @@ var ApiNewComponent = ApiNewComponent_1 = (function () {
             routeTemplate: [null, forms_1.Validators.required],
             methodSelectionType: 'All',
             name: [null, forms_1.Validators.compose([forms_1.Validators.required, this.validateName(this)])],
-            backendUri: [null, forms_1.Validators.compose([forms_1.Validators.required, ApiNewComponent_1.validateUrl()])],
+            backendUri: [null, forms_1.Validators.compose([ApiNewComponent_1.validateUrl()])],
             method_GET: false,
             method_POST: false,
             method_DELETE: false,
@@ -67,7 +67,7 @@ var ApiNewComponent = ApiNewComponent_1 = (function () {
             return Observable_1.Observable.zip(_this.functionApp.getFunctions(), _this.functionApp.getApiProxies(), _this._cacheService.postArm(_this.functionApp.site.id + "/config/appsettings/list", true), function (f, p, a) { return ({ fcs: f, proxies: p, appSettings: a.json() }); });
         })
             .do(null, function (e) {
-            _this._aiService.trackException(e, '/errors/api-new');
+            _this._aiService.trackException(e, '/errors/proxy-create');
             console.error(e);
         })
             .retry()
@@ -157,7 +157,8 @@ var ApiNewComponent = ApiNewComponent_1 = (function () {
                     _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                         message: _this._translateService.instant(portal_resources_1.PortalResources.apiProxy_alreadyExists, { name: newApiProxy.name }),
                         errorId: error_ids_1.ErrorIds.proxyWithSameNameAlreadyExists,
-                        errorType: error_event_1.ErrorType.UserError
+                        errorType: error_event_1.ErrorType.UserError,
+                        resourceId: _this.functionApp.site.id
                     });
                     throw "Proxy with name '" + newApiProxy.name + "' already exists";
                 }
@@ -175,8 +176,10 @@ var ApiNewComponent = ApiNewComponent_1 = (function () {
                 _this.apiProxies.push(newApiProxy);
                 _this.functionApp.saveApiProxy(api_proxy_1.ApiProxy.toJson(_this.apiProxies, _this._translateService)).subscribe(function () {
                     _this._globalStateService.clearBusyState();
+                    // If someone refreshed the app, it would created a new set of child nodes under the app node.
+                    _this._proxiesNode = _this.appNode.children.find(function (node) { return node.title === _this._proxiesNode.title; });
                     _this._proxiesNode.addChild(newApiProxy);
-                    //this._broadcastService.broadcast(BroadcastEvent.ApiProxyAdded, newApiProxy);
+                    _this._aiService.trackEvent('/actions/proxy/create');
                 });
             });
         }

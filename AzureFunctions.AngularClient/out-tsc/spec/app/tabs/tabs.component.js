@@ -36,9 +36,11 @@ var TabsComponent = (function () {
         this.selectTabHelper(this.tabs.toArray()[0]);
     };
     TabsComponent.prototype.selectTabHelper = function (tab) {
-        this.tabs.toArray().forEach(function (tab) { return tab.active = false; });
-        tab.active = true;
-        this.tabSelected.emit(tab);
+        this.tabs.toArray().forEach(function (t) { return t.active = false; });
+        if (tab) {
+            tab.active = true;
+            this.tabSelected.emit(tab);
+        }
     };
     return TabsComponent;
 }());

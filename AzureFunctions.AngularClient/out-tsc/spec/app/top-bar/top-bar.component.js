@@ -18,6 +18,7 @@ var functions_service_1 = require("../shared/services/functions.service");
 var constants_1 = require("../shared/models/constants");
 var global_state_service_1 = require("../shared/services/global-state.service");
 var core_2 = require("@ngx-translate/core");
+var resourceDescriptors_1 = require("app/shared/resourceDescriptors");
 var TopBarComponent = (function () {
     // @Output() private functionAppSettingsClicked: EventEmitter<any>;
     function TopBarComponent(_userService, _broadcastService, _portalService, _functionsService, _globalStateService, _translateService, _configService) {
@@ -33,7 +34,19 @@ var TopBarComponent = (function () {
         this.topBarNotifications = [];
         // this.functionAppSettingsClicked = new EventEmitter<any>();
         this.inIFrame = this._userService.inIFrame;
+        this.inTab = this._userService.inTab;
         this.isStandalone = this._configService.isStandalone();
+        if (this.inTab) {
+            _userService.getStartupInfo()
+                .first()
+                .subscribe(function (info) {
+                _this.resourceId = info.resourceId;
+                var descriptor = resourceDescriptors_1.Descriptor.getDescriptor(_this.resourceId);
+                _this.appName = descriptor.site;
+                var fnDescriptor = resourceDescriptors_1.Descriptor.getDescriptor(_this.resourceId);
+                _this.fnName = fnDescriptor.functionName;
+            });
+        }
         this._globalStateService.topBarNotificationsStream
             .subscribe(function (topBarNotifications) {
             _this.topBarNotifications = topBarNotifications;

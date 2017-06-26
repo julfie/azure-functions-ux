@@ -2,14 +2,14 @@
     <try-now *ngIf="showTryView && !gettingStarted"></try-now>
     <div *ngIf="visible" class="top-bar" [class.top-bar-getting-started]="gettingStarted">
 
-        <div *ngIf="!inIFrame" class="azure-logo left">
-            <div *ngIf="!isStandalone" class="vertical-align-center logo">{{ 'azureFunctions' | translate }}</div>
+        <div *ngIf="!inIFrame" class="azure-logo" [class.right]="inTab" [class.left]="isStandalone">
+            <div *ngIf="!isStandalone" class="vertical-align-center logo" [class.tabbed-logo]="inTab">{{ 'azureFunctions' | translate }}</div>
             <div *ngIf="isStandalone" class="vertical-align-center logo-standalone">{{ 'azureFunctionsRuntime' | translate }}</div>
         </div>
 
-        <!--<div *ngIf="!inIFrame">
+        <div *ngIf="!inIFrame" class="left">
             <div *ngIf="!isStandalone" class=" vertical-align-center function-information">{{ appName | translate }} - {{ fnName | translate}}</div>
-        </div>-->
+        </div>
 
         <div class="left vertical-align-center" [class.info-azure]="!isStandalone" [class.info-standalone]="isStandalone" [class.info-no-iframe]="!inIFrame">
             <span *ngFor="let notification of topBarNotifications; let isFirst = first"

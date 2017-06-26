@@ -195,7 +195,8 @@ var SwaggerDefinitionComponent = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.swaggerDefinition_prompt),
                     errorId: error_ids_1.ErrorIds.malformedAPIDefinition,
-                    errorType: error_event_1.ErrorType.UserError
+                    errorType: error_event_1.ErrorType.UserError,
+                    resourceId: _this.functionApp.site.id
                 });
                 _this._busyState.clearBusyState();
                 return;

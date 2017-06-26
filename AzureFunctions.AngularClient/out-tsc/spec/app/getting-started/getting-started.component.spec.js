@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var app_module_1 = require("./../app.module");
 /* tslint:disable:no-unused-variable */
 var testing_1 = require("@angular/core/testing");
 var getting_started_component_1 = require("./getting-started.component");
@@ -7,9 +8,7 @@ describe('GettingStartedComponent', function () {
     var component;
     var fixture;
     beforeEach(testing_1.async(function () {
-        testing_1.TestBed.configureTestingModule({
-            declarations: [getting_started_component_1.GettingStartedComponent]
-        })
+        testing_1.TestBed.configureTestingModule(app_module_1.AppModule.moduleDefinition)
             .compileComponents();
     }));
     beforeEach(function () {

@@ -16,6 +16,7 @@ var TreeNode = (function () {
         this.supportsScope = false;
         this.disabled = false;
         this.inSelectedTree = false;
+        this.isFocused = false;
     }
     TreeNode.prototype.select = function (force) {
         var _this = this;

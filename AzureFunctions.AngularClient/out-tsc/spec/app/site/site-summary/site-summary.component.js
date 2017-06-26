@@ -48,6 +48,7 @@ var SiteSummaryComponent = (function () {
         this._configService = _configService;
         this._slotService = _slotService;
         this.Resources = portal_resources_1.PortalResources;
+        this.showDownloadFunctionAppModal = false;
         this.openTabEvent = new Subject_1.Subject();
         this.isStandalone = _configService.isStandalone();
         userService.getStartupInfo()
@@ -98,12 +99,24 @@ var SiteSummaryComponent = (function () {
             var traceKey = _this._viewInfo.data.siteTraceKey;
             _this._aiService.stopTrace("/site/overview-tab-ready", traceKey);
             _this.hideAvailability = _this._isSlot || site.properties.sku === "Dynamic";
-            return Observable_1.Observable.zip(authZService.hasPermission(site.id, [authz_service_1.AuthzService.writeScope]), authZService.hasPermission(site.id, [authz_service_1.AuthzService.actionScope]), authZService.hasReadOnlyLock(site.id), _this._cacheService.getArm(configId), _this._cacheService.getArm(availabilityId, false, arm_service_1.ArmService.availabilityApiVersion), _this._slotService.getSlotsList(site.id), function (p, s, l, c, a, slots) { return ({
+            return Observable_1.Observable.zip(authZService.hasPermission(site.id, [authz_service_1.AuthzService.writeScope]), authZService.hasPermission(site.id, [authz_service_1.AuthzService.actionScope]), authZService.hasReadOnlyLock(site.id), _this._cacheService.getArm(configId), _this._cacheService.getArm(availabilityId, false, arm_service_1.ArmService.availabilityApiVersion).catch(function (e) {
+                // this call fails with 409 is Microsoft.ResourceHealth is not registered
+                if (e.status === 409) {
+                    return _this._cacheService.postArm("/subscriptions/" + _this.subscriptionId + "/providers/Microsoft.ResourceHealth/register")
+                        .mergeMap(function () {
+                        return _this._cacheService.getArm(availabilityId, false, arm_service_1.ArmService.availabilityApiVersion);
+                    })
+                        .catch(function (e) {
+                        return Observable_1.Observable.of(null);
+                    });
+                }
+                return Observable_1.Observable.of(null);
+            }), _this._slotService.getSlotsList(site.id), function (p, s, l, c, a, slots) { return ({
                 hasWritePermission: p,
                 hasSwapPermission: s,
                 hasReadOnlyLock: l,
                 config: c.json(),
-                availability: a.json(),
+                availability: !!a ? a.json() : null,
                 slotsList: slots
             }); });
         })
@@ -115,8 +128,7 @@ var SiteSummaryComponent = (function () {
             else {
                 _this.hasSwapAccess = _this.hasWriteAccess && res.hasSwapPermission;
             }
-            _this.disableRestart = _this._isSlot || res.slotsList.length > 0;
-            _this._setAvailabilityState(res.availability.properties.availabilityState);
+            _this._setAvailabilityState(!!res.availability ? res.availability.properties.availabilityState : constants_1.AvailabilityStates.unknown);
             if (_this.hasWriteAccess) {
                 return _this._cacheService.postArm(_this.site.id + "/config/publishingcredentials/list")
                     .map(function (r) {
@@ -216,10 +228,11 @@ var SiteSummaryComponent = (function () {
             }
         });
     };
-    SiteSummaryComponent.prototype.downloadFunctionAppContent = function () {
-        if (this.hasWriteAccess) {
-            window.open(this.scmUrl + "/api/zip/site/wwwroot?fileName=" + this.site.name + ".zip", '_blank');
-        }
+    SiteSummaryComponent.prototype.openDownloadFunctionAppModal = function () {
+        this.showDownloadFunctionAppModal = true;
+    };
+    SiteSummaryComponent.prototype.hideDownloadFunctionAppModal = function () {
+        this.showDownloadFunctionAppModal = false;
     };
     SiteSummaryComponent.prototype._cleanupBlob = function () {
         var windowUrl = window.URL || window.webkitURL;
@@ -395,6 +408,7 @@ var SiteSummaryComponent = (function () {
             var notifySuccess = stop
                 ? _this.ts.instant(portal_resources_1.PortalResources.siteSummary_stopNotifySuccess).format(site.name)
                 : _this.ts.instant(portal_resources_1.PortalResources.siteSummary_startNotifySuccess).format(site.name);
+            _this._portalService.stopNotification(notificationId, true, notifySuccess);
             appNode.refresh();
         }, function (e) {
             var notifyFail = stop

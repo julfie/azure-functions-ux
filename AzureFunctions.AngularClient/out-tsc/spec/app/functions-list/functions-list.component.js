@@ -32,6 +32,7 @@ var FunctionsListComponent = (function () {
             .switchMap(function (viewInfo) {
             _this.isLoading = true;
             _this._functionsNode = viewInfo.node;
+            _this.appNode = viewInfo.node.parent;
             _this.functionApp = _this._functionsNode.functionApp;
             return _this._functionsNode.loadChildren();
         })

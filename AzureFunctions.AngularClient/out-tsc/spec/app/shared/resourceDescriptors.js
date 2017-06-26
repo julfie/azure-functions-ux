@@ -65,6 +65,16 @@ var SiteDescriptor = (function (_super) {
         }
         return _this;
     }
+    SiteDescriptor.prototype.getResourceId = function () {
+        // "/subscriptions/ef90e930-9d7f-4a60-8a99-748e0eea69de/resourceGroups/AppServiceDemo/providers/Microsoft.Web/sites/andfunc1   /functions/ExternalTableCSharp1/files/run.csx"
+        // "/subscriptions/ef90e930-9d7f-4a60-8a99-748e0eea69de/resourceGroups/AppServiceDemo/providers/Microsoft.Web/sites/andfunc1/slots/staging /functions/ExternalTableCSharp1/files/run.csx"
+        var resource = "/subscriptions/" + this.subscription + "/resourceGroups/" + this.resourceGroup + "/providers/Microsoft.Web/sites/" + this.site;
+        if (this.slot) {
+            var slotInfo = "/slots/${this.slots}";
+            resource.concat(slotInfo);
+        }
+        return resource;
+    };
     SiteDescriptor.prototype.getWebsiteId = function () {
         if (!this._websiteId) {
             var name_1 = !this.slot ? this.site : this.site + "(" + this.slot + ")";

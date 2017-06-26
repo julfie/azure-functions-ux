@@ -40,7 +40,7 @@ var AppComponent = (function () {
         this._broadcastService = _broadcastService;
         this.ready = false;
         this.showTryLanding = window.location.pathname.endsWith('/try');
-        if (_userService.inIFrame || window.location.protocol === 'http:') {
+        if (_userService.inIFrame || window.location.protocol === 'http:' || _userService.inTab) {
             this.gettingStarted = false;
             return;
         }
@@ -51,7 +51,6 @@ var AppComponent = (function () {
     AppComponent.prototype.ngOnInit = function () {
         var _this = this;
         this._userService.getStartupInfo()
-            .first()
             .subscribe(function (info) {
             _this._startupInfo = info;
             _this.ready = true;

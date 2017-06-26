@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var core_2 = require("@ngx-translate/core");
+var ng2_popover_1 = require("ng2-popover");
 var binding_input_1 = require("../shared/models/binding-input");
 var portal_service_1 = require("../shared/services/portal.service");
 var user_service_1 = require("../shared/services/user.service");
@@ -72,6 +73,12 @@ var BindingInputComponent = (function () {
             case binding_1.ResourceType.EventHub:
                 this.pickerName = "EventHub";
                 break;
+            case binding_1.ResourceType.ServiceBus:
+                this.pickerName = "ServiceBus";
+                break;
+            case binding_1.ResourceType.AppSetting:
+                this.pickerName = "AppSetting";
+                break;
             case binding_1.ResourceType.DocumentDB:
                 this.pickerName = "DocDbPickerBlade";
                 break;
@@ -95,7 +102,7 @@ var BindingInputComponent = (function () {
         }
         var picker = this.input;
         picker.inProcess = true;
-        if (this.pickerName != "EventHub") {
+        if (this.pickerName != "EventHub" && this.pickerName != "ServiceBus" && this.pickerName != "AppSetting") {
             this._globalStateService.setBusyState(this._translateService.instant(portal_resources_1.PortalResources.resourceSelect));
             if (bladeInput) {
                 this._portalService.openCollectorBladeWithInputs(this.functionApp.site.id, bladeInput, "binding-input", function (appSettingName) {
@@ -116,6 +123,26 @@ var BindingInputComponent = (function () {
         }
         this.setClass(value);
         this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.IntegrateChanged);
+    };
+    BindingInputComponent.prototype.onAppSettingValueShown = function () {
+        var _this = this;
+        return this._cacheService.postArm(this.functionApp.site.id + "/config/appsettings/list", true)
+            .do(null, function (e) {
+            _this.appSettingValue = _this._translateService.instant(portal_resources_1.PortalResources.bindingInput_appSettingNotFound);
+        })
+            .subscribe(function (r) {
+            _this.appSettingValue = r.json().properties[_this._input.value];
+            if (!_this.appSettingValue) {
+                _this.appSettingValue = _this._translateService.instant(portal_resources_1.PortalResources.bindingInput_appSettingNotFound);
+            }
+            // Use timeout as content is changed
+            setTimeout(function () {
+                _this.pickerPopover.show();
+            }, 0);
+        });
+    };
+    BindingInputComponent.prototype.onAppSettingValueHidden = function () {
+        this.appSettingValue = null;
     };
     BindingInputComponent.prototype.onDropDownInputChanged = function (value) {
         this._input.value = value;
@@ -199,6 +226,10 @@ __decorate([
     core_1.Output(),
     __metadata("design:type", Object)
 ], BindingInputComponent.prototype, "validChange", void 0);
+__decorate([
+    core_1.ViewChild('pickerPopover'),
+    __metadata("design:type", ng2_popover_1.PopoverContent)
+], BindingInputComponent.prototype, "pickerPopover", void 0);
 __decorate([
     core_1.Input(),
     __metadata("design:type", function_app_1.FunctionApp)

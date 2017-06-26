@@ -53,6 +53,7 @@ var FunctionDevComponent = FunctionDevComponent_1 = (function () {
         this.rightTab = FunctionDevComponent_1.rightTab;
         this.bottomTab = FunctionDevComponent_1.bottomTab;
         this.expandLogs = false;
+        this.inTab = window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
         this._bindingManager = new binding_manager_1.BindingManager();
         this._isClientCertEnabled = false;
         this.functionInvokeUrl = this._translateService.instant(portal_resources_1.PortalResources.functionDev_loading);
@@ -265,7 +266,10 @@ var FunctionDevComponent = FunctionDevComponent_1 = (function () {
         if (changes['selectedFunction']) {
             delete this.updatedTestContent;
             delete this.runResult;
-            this.functionSelectStream.next(changes['selectedFunction'].currentValue);
+            var selectedFunction = changes['selectedFunction'].currentValue;
+            if (selectedFunction) {
+                this.functionSelectStream.next(selectedFunction);
+            }
         }
     };
     FunctionDevComponent.prototype.setFunctionKey = function (functionInfo) {
@@ -338,7 +342,8 @@ var FunctionDevComponent = FunctionDevComponent_1 = (function () {
                 this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: this._translateService.instant(portal_resources_1.PortalResources.errorParsingConfig, { error: e }),
                     errorId: error_ids_1.ErrorIds.errorParsingConfig,
-                    errorType: error_event_1.ErrorType.UserError
+                    errorType: error_event_1.ErrorType.UserError,
+                    resourceId: this.functionApp.site.id
                 });
                 return;
             }
@@ -424,6 +429,11 @@ var FunctionDevComponent = FunctionDevComponent_1 = (function () {
             this.runFunctionInternal();
         }
     };
+    FunctionDevComponent.prototype.newTab = function () {
+        //open a new tab with the rousource information
+        this.rID = this.functionApp.site.id + "/functions/" + this.functionInfo.name + "/files/" + this.fileName;
+        window.open("https://localhost:44300/?tabbed=true&" + this.rID, '_blank');
+    };
     FunctionDevComponent.prototype.cancelCurrentRun = function () {
         this._globalStateService.clearBusyState();
         if (this.running) {
@@ -444,7 +454,8 @@ var FunctionDevComponent = FunctionDevComponent_1 = (function () {
                             message: _this._translateService.instant(portal_resources_1.PortalResources.functionDev_functionErrorMessage, { name: functionInfo.name, error: e }),
                             details: _this._translateService.instant(portal_resources_1.PortalResources.functionDev_functionErrorDetails, { error: e }),
                             errorId: error_ids_1.ErrorIds.generalFunctionErrorFromHost + functionInfo.name,
-                            errorType: error_event_1.ErrorType.FunctionError
+                            errorType: error_event_1.ErrorType.FunctionError,
+                            resourceId: _this.functionApp.site.id
                         });
                         _this._aiService.trackEvent(error_ids_1.ErrorIds.generalFunctionErrorFromHost, { error: e, functionName: functionInfo.name, functionConfig: JSON.stringify(functionInfo.config) });
                     });
@@ -460,7 +471,8 @@ var FunctionDevComponent = FunctionDevComponent_1 = (function () {
                                     message: _this._translateService.instant(portal_resources_1.PortalResources.functionDev_hostErrorMessage, { error: e }),
                                     details: _this._translateService.instant(portal_resources_1.PortalResources.functionDev_hostErrorMessage, { error: e }),
                                     errorId: error_ids_1.ErrorIds.generalHostErrorFromHost,
-                                    errorType: error_event_1.ErrorType.RuntimeError
+                                    errorType: error_event_1.ErrorType.RuntimeError,
+                                    resourceId: _this.functionApp.site.id
                                 });
                                 _this._aiService.trackEvent('/errors/host', { error: e, app: _this._globalStateService.FunctionContainer.id });
                             });

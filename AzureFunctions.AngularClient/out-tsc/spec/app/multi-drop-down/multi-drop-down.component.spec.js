@@ -4,9 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 //    let component: MultiDropDownComponent;
 //    let fixture: ComponentFixture<MultiDropDownComponent>;
 //  beforeEach(async(() => {
-//    TestBed.configureTestingModule({
-//        declarations: [MultiDropDownComponent ]
-//    })
+//    TestBed.configureTestingModule(AppModule.)
 //    .compileComponents();
 //  }));
 //  beforeEach(() => {

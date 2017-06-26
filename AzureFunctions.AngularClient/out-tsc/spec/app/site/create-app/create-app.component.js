@@ -99,7 +99,8 @@ var CreateAppComponent = (function () {
                 message: _this._translateService.instant(portal_resources_1.PortalResources.createApp_fail),
                 details: _this._translateService.instant(portal_resources_1.PortalResources.createApp_fail),
                 errorId: error_ids_1.ErrorIds.failedToCreateApp,
-                errorType: error_event_1.ErrorType.Fatal
+                errorType: error_event_1.ErrorType.Fatal,
+                resourceId: id
             });
             _this._aiService.trackEvent(error_ids_1.ErrorIds.failedToCreateApp, { error: error, id: id });
         });

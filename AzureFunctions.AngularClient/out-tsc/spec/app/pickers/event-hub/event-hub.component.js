@@ -38,7 +38,7 @@ var EventHubComponent = (function () {
         this.selectInProcess = false;
         this.canSelect = false;
         this.close = new Subject_1.Subject();
-        this.select = new Subject_1.Subject();
+        this.selectItem = new Subject_1.Subject();
         this.options = [
             {
                 displayLabel: this._translateService.instant(portal_resources_1.PortalResources.eventHubPicker_eventHub),
@@ -89,11 +89,20 @@ var EventHubComponent = (function () {
         this.eventHubs = null;
         this.selectedEventHub = null;
         this.selectedPolicy = null;
-        this._cacheService.getArm(value + "/eventHubs", true).subscribe(function (r) {
-            _this.eventHubs = r.json();
+        Observable_1.Observable.zip(this._cacheService.getArm(value + "/eventHubs", true), this._cacheService.getArm(value + "/AuthorizationRules", true), function (hubs, namespacePolices) { return ({ hubs: hubs.json(), namespacePolices: namespacePolices.json() }); }).subscribe(function (r) {
+            _this.eventHubs = r.hubs;
             if (_this.eventHubs.value.length > 0) {
                 _this.selectedEventHub = _this.eventHubs.value[0].id;
                 _this.onEventHubChange(_this.selectedEventHub);
+            }
+            _this.namespacePolices = r.namespacePolices;
+            if (_this.namespacePolices.value.length > 0) {
+                _this.namespacePolices.value.forEach(function (item) {
+                    item.name += " " + _this._translateService.instant(portal_resources_1.PortalResources.eventHubPicker_namespacePolicy);
+                    ;
+                });
+                _this.selectedPolicy = r.namespacePolices.value[0].id;
+                _this.polices = _this.namespacePolices;
             }
             _this.setSelect();
         });
@@ -104,6 +113,12 @@ var EventHubComponent = (function () {
         this.polices = null;
         this._cacheService.getArm(value + "/AuthorizationRules", true).subscribe(function (r) {
             _this.polices = r.json();
+            _this.polices.value.forEach(function (item) {
+                item.name += " " + _this._translateService.instant(portal_resources_1.PortalResources.eventHubPicker_eventHubPolicy);
+            });
+            if (_this.namespacePolices.value.length > 0) {
+                _this.polices.value = _this.polices.value.concat(_this.namespacePolices.value);
+            }
             if (_this.polices.value.length > 0) {
                 _this.selectedPolicy = _this.polices.value[0].id;
             }
@@ -145,17 +160,22 @@ var EventHubComponent = (function () {
     EventHubComponent.prototype.onSelect = function () {
         var _this = this;
         if (this.option === this.optionTypes.eventHub) {
-            if (this.selectedNamespace && this.selectedEventHub && this.selectedPolicy) {
+            if (this.selectedEventHub && this.selectedPolicy) {
                 this.selectInProcess = true;
                 this._globalStateService.setBusyState();
                 var appSettingName;
-                return Observable_1.Observable.zip(this._cacheService.getArm(this.selectedPolicy, true, "2014-09-01"), this._cacheService.postArm(this._functionApp.site.id + "/config/appsettings/list", true), function (p, a) { return ({ policy: p, appSettings: a }); })
+                return Observable_1.Observable.zip(this._cacheService.postArm(this.selectedPolicy + '/listkeys', true, "2015-08-01"), this._cacheService.postArm(this._functionApp.site.id + "/config/appsettings/list", true), function (p, a) { return ({ keys: p, appSettings: a }); })
                     .flatMap(function (r) {
                     var namespace = _this.namespaces.value.find(function (p) { return p.id === _this.selectedNamespace; });
-                    var eventHub = _this.eventHubs.value.find(function (p) { return p.id === _this.selectedEventHub; });
-                    appSettingName = namespace.name + "_" + eventHub.name + "_EVENTHUB";
-                    var policy = r.policy.json();
-                    var appSettingValue = "Endpoint=sb://" + namespace.name + ".servicebus.windows.net/;SharedAccessKeyName=" + policy.properties.keyName + ";SharedAccessKey=" + policy.properties.primaryKey + ";EntityPath=" + eventHub.name;
+                    var keys = r.keys.json();
+                    appSettingName = namespace.name + "_" + keys.keyName + "_EVENTHUB";
+                    var appSettingValue = keys.primaryConnectionString;
+                    // Runtime requires entitypath for all event hub connections strings, 
+                    // so if it's namespace policy add entitypath as selected eventhub
+                    if (appSettingValue.toLowerCase().indexOf('entitypath') === -1) {
+                        var eventHub = _this.eventHubs.value.find(function (p) { return p.id === _this.selectedEventHub; });
+                        appSettingValue = appSettingValue + ";EntityPath=" + eventHub.name;
+                    }
                     var appSettings = r.appSettings.json();
                     appSettings.properties[appSettingName] = appSettingValue;
                     return _this._cacheService.putArm(appSettings.id, _this._armService.websiteApiVersion, appSettings);
@@ -167,7 +187,7 @@ var EventHubComponent = (function () {
                 })
                     .subscribe(function (r) {
                     _this._globalStateService.clearBusyState();
-                    _this.select.next(appSettingName);
+                    _this.selectItem.next(appSettingName);
                 });
             }
         }
@@ -199,7 +219,7 @@ var EventHubComponent = (function () {
                 })
                     .subscribe(function (r) {
                     _this._globalStateService.clearBusyState();
-                    _this.select.next(appSettingName);
+                    _this.selectItem.next(appSettingName);
                 });
             }
         }
@@ -208,18 +228,17 @@ var EventHubComponent = (function () {
         switch (this.option) {
             case this.optionTypes.custom:
                 {
-                    this.canSelect = (this.appSettingName && this.appSettingValue) ? true : false;
+                    this.canSelect = !!(this.appSettingName && this.appSettingValue);
                     break;
                 }
             case this.optionTypes.eventHub:
                 {
-                    this.canSelect = (this.selectedNamespace && this.selectedEventHub && this.selectedPolicy)
-                        ? true : false;
+                    this.canSelect = !!(this.selectedPolicy && this.selectedEventHub);
                     break;
                 }
             case this.optionTypes.IOTHub:
                 {
-                    this.canSelect = (this.selectedIOTHub && this.selectedIOTEndpoint) ? true : false;
+                    this.canSelect = !!(this.selectedIOTHub && this.selectedIOTEndpoint);
                     break;
                 }
         }
@@ -236,7 +255,7 @@ __decorate([
 __decorate([
     core_1.Output(),
     __metadata("design:type", Object)
-], EventHubComponent.prototype, "select", void 0);
+], EventHubComponent.prototype, "selectItem", void 0);
 __decorate([
     core_1.Input(),
     __metadata("design:type", function_app_1.FunctionApp),
@@ -246,7 +265,7 @@ EventHubComponent = __decorate([
     core_1.Component({
         selector: 'event-hub',
         templateUrl: './event-hub.component.html',
-        styleUrls: ['./event-hub.component.scss']
+        styleUrls: ['./../picker.scss']
     }),
     __metadata("design:paramtypes", [cache_service_1.CacheService,
         arm_service_1.ArmService,

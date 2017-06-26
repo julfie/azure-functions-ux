@@ -18,6 +18,7 @@ var binding_1 = require("../shared/models/binding");
 var binding_manager_1 = require("../shared/models/binding-manager");
 var global_state_service_1 = require("../shared/services/global-state.service");
 var portal_resources_1 = require("../shared/models/portal-resources");
+var constants_1 = require("../shared/models/constants");
 var TemplatePickerComponent = (function () {
     function TemplatePickerComponent(_globalStateService, _translateService) {
         var _this = this;
@@ -187,6 +188,23 @@ var TemplatePickerComponent = (function () {
                             });
                             _this.languages = _this.languages.sort(function (a, b) {
                                 return a.displayLabel > b.displayLabel ? 1 : -1;
+                            });
+                            _this.templates.sort(function (a, b) {
+                                var ia = constants_1.Order.templateOrder.findIndex(function (item) { return (a.value.startsWith(item)); });
+                                var ib = constants_1.Order.templateOrder.findIndex(function (item) { return (b.value.startsWith(item)); });
+                                if (ia === -1) {
+                                    ia = Number.MAX_VALUE;
+                                }
+                                if (ib === -1) {
+                                    ib = Number.MAX_VALUE;
+                                }
+                                if (ia === ib) {
+                                    // If templates are not in ordered list apply alphabetical order
+                                    return a.name > b.name ? 1 : -1;
+                                }
+                                else {
+                                    return ia > ib ? 1 : -1;
+                                }
                             });
                     }
                 });

@@ -46,7 +46,8 @@ var SlotsListComponent = (function () {
             _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                 message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToLoadSlotsList),
                 errorType: error_event_1.ErrorType.RuntimeError,
-                errorId: error_ids_1.ErrorIds.unableToPopulateSlotsList
+                errorId: error_ids_1.ErrorIds.unableToPopulateSlotsList,
+                resourceId: 'none'
             });
         }));
     }

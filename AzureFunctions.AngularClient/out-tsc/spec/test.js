@@ -7,8 +7,18 @@ require("zone.js/dist/sync-test");
 require("zone.js/dist/jasmine-patch");
 require("zone.js/dist/async-test");
 require("zone.js/dist/fake-async-test");
+require("./polyfills/window");
+require("./polyfills/string");
+require("./polyfills/object");
 var testing_1 = require("@angular/core/testing");
 var testing_2 = require("@angular/platform-browser-dynamic/testing");
+window.appsvc = {
+    env: {
+        hostName: '',
+        runtimeType: '',
+        azureResourceManagerEndpoint: ''
+    }
+};
 // Prevent Karma from running prematurely.
 __karma__.loaded = function () { };
 // First, initialize the Angular testing environment.

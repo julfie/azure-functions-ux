@@ -1,14 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var app_module_1 = require("./../../app.module");
 var testing_1 = require("@angular/core/testing");
 var event_hub_component_1 = require("./event-hub.component");
 describe('EventHubComponent', function () {
     var component;
     var fixture;
     beforeEach(testing_1.async(function () {
-        testing_1.TestBed.configureTestingModule({
-            declarations: [event_hub_component_1.EventHubComponent]
-        })
+        testing_1.TestBed.configureTestingModule(app_module_1.AppModule.moduleDefinition)
             .compileComponents();
     }));
     beforeEach(function () {

@@ -32,7 +32,8 @@ var UserService = (function () {
         this._configService = _configService;
         this._translateService = _translateService;
         this._startupInfoStream = new ReplaySubject_1.ReplaySubject(1);
-        this.inIFrame = window.parent !== window;
+        this.inIFrame = portal_service_1.PortalService.inIFrame();
+        this.inTab = portal_service_1.PortalService.inTab();
         this._inTry = window.location.pathname.endsWith('/try');
         this._startupInfo = {
             token: null,
@@ -42,7 +43,7 @@ var UserService = (function () {
             effectiveLocale: null,
             resourceId: null
         };
-        if (this.inIFrame) {
+        if (this.inIFrame || this.inTab) {
             this._portalService.getStartupInfo()
                 .mergeMap(function (info) {
                 return Observable_1.Observable.zip(Observable_1.Observable.of(info), _this._getLocalizedResources(info, null), function (i, r) { return ({ info: i, resources: r }); });

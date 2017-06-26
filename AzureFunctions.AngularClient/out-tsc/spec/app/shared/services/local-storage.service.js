@@ -40,6 +40,17 @@ var LocalStorageService = (function () {
             }
         }
     };
+    LocalStorageService.prototype.storageHandler = function (message) {
+        if (message.key != 'message')
+            return;
+        var m = this.getItem("message");
+        var msg = JSON.stringify(m);
+        //set action based on received message
+        if (msg == "startup") {
+            //send message back with startup information
+            //and information on which fn to have openS
+        }
+    };
     LocalStorageService.prototype._resetStorage = function () {
         localStorage.clear();
         localStorage.setItem(this._apiVersionKey, this._apiVersion);

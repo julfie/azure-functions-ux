@@ -9,6 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var url_1 = require("./../Utilities/url");
 var core_1 = require("@angular/core");
 var Subject_1 = require("rxjs/Subject");
 var ReplaySubject_1 = require("rxjs/ReplaySubject");
@@ -16,18 +17,31 @@ var portal_1 = require("../models/portal");
 var broadcast_service_1 = require("./broadcast.service");
 var broadcast_event_1 = require("../models/broadcast-event");
 var ai_service_1 = require("./ai.service");
-var PortalService = (function () {
+// import { MessageLoad } from "app/shared/models/localStorage/local-storage";
+var Guid_1 = require("app/shared/Utilities/Guid");
+var MessageLoad = (function () {
+    function MessageLoad() {
+    }
+    return MessageLoad;
+}());
+var PortalService = PortalService_1 = (function () {
     function PortalService(_broadcastService, _aiService) {
         this._broadcastService = _broadcastService;
         this._aiService = _aiService;
+        this.guidId = null;
         this.sessionId = "";
+        this.startupDict = new Map();
         this.portalSignature = "FxAppBlade";
         this.startupInfo = null;
         this.startupInfoObservable = new ReplaySubject_1.ReplaySubject(1);
         this.setupOAuthObservable = new Subject_1.Subject();
         this.notificationStartStream = new Subject_1.Subject();
-        if (this.inIFrame()) {
+        this.localStorage = window.localStorage;
+        if (PortalService_1.inIFrame()) {
             this.initializeIframe();
+        }
+        if (PortalService_1.inTab()) {
+            this.initializeTab();
         }
     }
     PortalService.prototype.getStartupInfo = function () {
@@ -39,7 +53,8 @@ var PortalService = (function () {
     };
     PortalService.prototype.initializeIframe = function () {
         var _this = this;
-        this.shellSrc = window.location.search.match(/=(.+)/)[1];
+        var shellUrl = decodeURI(window.location.href);
+        this.shellSrc = url_1.Url.getParameterByName(shellUrl, "trustedAuthority");
         window.addEventListener(portal_1.Verbs.message, this.iframeReceivedMsg.bind(this), false);
         var appsvc = window.appsvc;
         var getStartupInfoObj = {
@@ -53,6 +68,57 @@ var PortalService = (function () {
                 _this.logMessage(portal_1.LogEntryLevel.Error, error.details);
             }
         });
+    };
+    PortalService.prototype.initializeTab = function () {
+        //listener to localStorage
+        window.addEventListener("storage", this.recieveStorageMessage.bind(this), false);
+        if (PortalService_1.inTab() && this.guidId == null) {
+            // create own id and set
+            this.guidId = Guid_1.Guid.newTinyGuid();
+            //send id back to parent
+            this.returnMessage(this.guidId, "get-startup-info", null);
+        }
+    };
+    PortalService.prototype.recieveStorageMessage = function (item) {
+        var _this = this;
+        var msg = JSON.parse(item.newValue);
+        if (!msg) {
+            return;
+        }
+        console.log(item);
+        if (PortalService_1.inIFrame() && !PortalService_1.inTab()) {
+            // if parent recieved new id call
+            if (item.key == "get-startup-info") {
+                var id_1 = msg.id;
+                //send over startupinfo
+                this.getStartupInfo()
+                    .take(1)
+                    .subscribe(function (info) {
+                    var startup = JSON.parse(JSON.stringify(info));
+                    startup.resourceId = "";
+                    _this.returnMessage(id_1, "startup-info", startup);
+                });
+            }
+        }
+        else if (PortalService_1.inTab()) {
+            //if the startup message is meant for the child tab
+            if (msg.id == this.guidId && item.key == "startup-info") {
+                // get new startup info and update
+                var startupInfo = msg.data;
+                startupInfo.resourceId = window.location.href.split("&")[1];
+                this.startupInfoObservable.next(startupInfo);
+            }
+        }
+    };
+    PortalService.prototype.returnMessage = function (id, verb, data) {
+        // return the ready message with guid
+        var returnMessage = new MessageLoad();
+        returnMessage.id = id;
+        returnMessage.verb = verb;
+        returnMessage.data = data;
+        // send and then remove
+        window.localStorage.setItem(verb, JSON.stringify(returnMessage));
+        window.localStorage.removeItem(verb);
     };
     PortalService.prototype.openBlade = function (bladeInfo, source) {
         this.logAction(source, 'open-blade ' + bladeInfo.detailBlade);
@@ -104,7 +170,7 @@ var PortalService = (function () {
     };
     PortalService.prototype.startNotification = function (title, description) {
         var _this = this;
-        if (this.inIFrame()) {
+        if (PortalService_1.inIFrame()) {
             var payload = {
                 state: "start",
                 title: title,
@@ -189,7 +255,7 @@ var PortalService = (function () {
         }
     };
     PortalService.prototype.postMessage = function (verb, data) {
-        if (this.inIFrame()) {
+        if (PortalService_1.inIFrame()) {
             window.parent.postMessage({
                 signature: this.portalSignature,
                 kind: verb,
@@ -197,15 +263,19 @@ var PortalService = (function () {
             }, this.shellSrc);
         }
     };
-    PortalService.prototype.inIFrame = function () {
-        return window.parent !== window;
+    PortalService.inIFrame = function () {
+        return window.parent !== window && window.location.pathname !== "/context.html";
+    };
+    PortalService.inTab = function () {
+        return window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
     };
     return PortalService;
 }());
-PortalService = __decorate([
+PortalService = PortalService_1 = __decorate([
     core_1.Injectable(),
     __metadata("design:paramtypes", [broadcast_service_1.BroadcastService,
         ai_service_1.AiService])
 ], PortalService);
 exports.PortalService = PortalService;
+var PortalService_1;
 //# sourceMappingURL=portal.service.js.map

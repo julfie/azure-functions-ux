@@ -269,7 +269,8 @@ var AppNode = (function (_super) {
                             message: _this.sideNav.translateService.instant(portal_resources_1.PortalResources.functionDev_hostErrorMessage, { error: e }),
                             details: _this.sideNav.translateService.instant(portal_resources_1.PortalResources.functionDev_hostErrorMessage, { error: e }),
                             errorId: error_ids_1.ErrorIds.generalHostErrorFromHost,
-                            errorType: error_event_1.ErrorType.RuntimeError
+                            errorType: error_event_1.ErrorType.RuntimeError,
+                            resourceId: _this._functionApp.site.id
                         });
                         _this.sideNav.aiService.trackEvent('/errors/host', { error: e, app: _this.resourceId });
                     });
