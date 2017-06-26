@@ -63,7 +63,6 @@ export class TopBarComponent implements OnInit {
                 this.appName = descriptor.site;
                 let fnDescriptor = new FunctionDescriptor(this.resourceId);
                 this.fnName = fnDescriptor.functionName;
-                console.log(this.fnName);
             });
         }
 
