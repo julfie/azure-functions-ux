@@ -49,7 +49,7 @@ export class PortalService {
         this.notificationStartStream = new Subject<NotificationStartedInfo>();
         this.localStorage = window.localStorage;
 
-        if (PortalService.inIFrame()){ 
+        if (PortalService.inIFrame()){
             this.initializeIframe();
         }
         if(PortalService.inTab()){
@@ -68,11 +68,8 @@ export class PortalService {
 
     initializeIframe(): void {
 
-        this.shellSrc = window.location.search.match(/=(.+)/)[1];
-
-        console.log("Adding storage listener");
-        window.addEventListener("storage", this.recieveStorageMessage.bind(this), false);
-
+        let shellUrl = decodeURI(window.location.href);
+        this.shellSrc = Url.getParameterByName(shellUrl, "trustedAuthority");
         window.addEventListener(Verbs.message, this.iframeReceivedMsg.bind(this), false);
 
         let appsvc = window.appsvc;

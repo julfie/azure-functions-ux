@@ -35,8 +35,8 @@ export class UserService {
         private _translateService: TranslateService) {
 
         this._startupInfoStream = new ReplaySubject<StartupInfo>(1);
-        this.inIFrame = window.parent !== window;
-        this.inTab = window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self; //check if in tab i.e.
+        this.inIFrame = PortalService.inIFrame();
+        this.inTab = PortalService.inTab();
         this._inTry = window.location.pathname.endsWith('/try');
 
         this._startupInfo = {
