@@ -14,7 +14,6 @@ var Observable_1 = require("rxjs/Observable");
 var arm_service_1 = require("./arm.service");
 var cache_service_1 = require("./cache.service");
 var constants_1 = require("../../shared/models/constants");
-var Guid_1 = require("./../Utilities/Guid");
 var SlotsService = SlotsService_1 = (function () {
     function SlotsService(_cacheService, _armService) {
         this._cacheService = _cacheService;
@@ -28,39 +27,14 @@ var SlotsService = SlotsService_1 = (function () {
     };
     //Create Slot
     SlotsService.prototype.createNewSlot = function (siteId, slotName, loc, serverfarmId) {
-        var _this = this;
-        // set the config settings similar to function App
-        return this._cacheService.postArm(siteId + "/config/appsettings/list", true).flatMap(function (r) {
-            var tGuid = Guid_1.Guid.newTinyGuid().toLowerCase();
-            var props = r.json().properties;
-            var currentAppSettings = [];
-            for (var key in props) {
-                if (props.hasOwnProperty(key) && key.toLowerCase() !== constants_1.Constants.contentShareConfigSettingsName.toLowerCase()) {
-                    currentAppSettings.push({
-                        name: key,
-                        value: props[key]
-                    });
-                }
+        // create payload
+        var payload = JSON.stringify({
+            location: loc,
+            properties: {
+                serverFarmId: serverfarmId
             }
-            // the name limit is 63 https://blogs.msdn.microsoft.com/jmstall/2014/06/12/azure-storage-naming-rules/ guid is 3 characters long
-            // Fix for issue: #1318 - Old content around if I delete and recreate a slot with same name
-            var containerPrefix = slotName.length < 59 ? slotName : slotName.substr(0, 59);
-            currentAppSettings.push({
-                name: constants_1.Constants.contentShareConfigSettingsName,
-                value: "" + slotName + tGuid
-            });
-            // create payload
-            var payload = JSON.stringify({
-                location: loc,
-                properties: {
-                    serverFarmId: serverfarmId,
-                    siteConfig: {
-                        appSettings: currentAppSettings
-                    }
-                }
-            });
-            return _this._cacheService.putArm(siteId + "/slots/" + slotName, _this._armService.websiteApiVersion, payload);
         });
+        return this._cacheService.putArm(siteId + "/slots/" + slotName, this._armService.websiteApiVersion, payload);
     };
     SlotsService.isSlot = function (siteId) {
         // slots id looks like

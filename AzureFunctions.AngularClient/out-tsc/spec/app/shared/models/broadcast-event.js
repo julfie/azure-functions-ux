@@ -15,10 +15,6 @@ var BroadcastEvent;
     BroadcastEvent[BroadcastEvent["TrialExpired"] = 10] = "TrialExpired";
     BroadcastEvent[BroadcastEvent["ResetKeySelection"] = 11] = "ResetKeySelection";
     BroadcastEvent[BroadcastEvent["RefreshPortal"] = 12] = "RefreshPortal";
-    BroadcastEvent[BroadcastEvent["ApiProxyAdded"] = 13] = "ApiProxyAdded";
-    BroadcastEvent[BroadcastEvent["ApiProxyDeleted"] = 14] = "ApiProxyDeleted";
-    BroadcastEvent[BroadcastEvent["ApiProxySelected"] = 15] = "ApiProxySelected";
-    BroadcastEvent[BroadcastEvent["ApiProxyUpdated"] = 16] = "ApiProxyUpdated";
-    BroadcastEvent[BroadcastEvent["ClearError"] = 17] = "ClearError";
+    BroadcastEvent[BroadcastEvent["ClearError"] = 13] = "ClearError";
 })(BroadcastEvent = exports.BroadcastEvent || (exports.BroadcastEvent = {}));
 //# sourceMappingURL=broadcast-event.js.map

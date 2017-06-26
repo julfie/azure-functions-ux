@@ -89,6 +89,7 @@ var RunHttpComponent = (function () {
                     }
                 });
             }
+            this.paramChanged();
         },
         enumerable: true,
         configurable: true

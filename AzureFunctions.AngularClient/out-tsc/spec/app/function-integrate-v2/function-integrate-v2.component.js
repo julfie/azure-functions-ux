@@ -146,7 +146,8 @@ var FunctionIntegrateV2Component = (function () {
             this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                 message: this._translateService.instant(portal_resources_1.PortalResources.errorParsingConfig, { error: e }),
                 errorId: error_ids_1.ErrorIds.errorParsingConfig,
-                errorType: error_event_1.ErrorType.UserError
+                errorType: error_event_1.ErrorType.UserError,
+                resourceId: this.functionApp.site.id
             });
             this.onRemoveBinding(binding);
         }

@@ -127,13 +127,7 @@ var MonacoEditorDirective = (function () {
         var _this = this;
         this._globalStateService.setBusyState();
         var onGotAmdLoader = function () {
-            // Load monaco
-            if (window.location.hostname === 'localhost' || _this._configService.isStandalone()) {
-                window.require.config({ paths: { 'vs': '/ng/assets/monaco/min/vs' } });
-            }
-            else {
-                window.require.config({ paths: { 'vs': '/assets/monaco/min/vs' } });
-            }
+            window.require.config({ paths: { 'vs': 'assets/monaco/min/vs' } });
             window.require(['vs/editor/editor.main'], function () {
                 var that = _this;
                 if (that._editor) {
@@ -160,7 +154,7 @@ var MonacoEditorDirective = (function () {
                     value: that._content,
                     language: that._language,
                     readOnly: that._disabled,
-                    lineHeight: 17
+                    lineHeight: 17,
                 });
                 that._editor.onDidChangeModelContent(function () {
                     if (!that._silent) {
@@ -172,6 +166,11 @@ var MonacoEditorDirective = (function () {
                     that.onSave.emit(that._editor.getValue());
                 });
                 that._globalStateService.clearBusyState();
+                // TODO: that._editor.addcommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_T, () => {
+                // open existing function in new tab
+                // if dirty ask to save? or save for them?
+                // change view to to open in new tab
+                // });
             });
         };
         // Load AMD loader if necessary
@@ -187,7 +186,7 @@ var MonacoEditorDirective = (function () {
         }
     };
     MonacoEditorDirective.prototype.setMonacoSchema = function (schemaName, functionApp) {
-        functionApp.getJson('/schemas/' + schemaName)
+        functionApp.getJson('assets/schemas/' + schemaName)
             .subscribe(function (schema) {
             schema.additionalProperties = false;
             monaco.languages.json.jsonDefaults.setDiagnosticsOptions({

@@ -9,6 +9,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var search_box_component_1 = require("./../search-box/search-box.component");
+var tree_node_iterator_1 = require("./../tree-view/tree-node-iterator");
 var core_1 = require("@angular/core");
 var http_1 = require("@angular/http");
 var Observable_1 = require("rxjs/Observable");
@@ -76,10 +78,11 @@ var SideNavComponent = (function () {
                 _this._initialized = true;
                 // this.resourceId = !!this.resourceId ? this.resourceId : info.resourceId;
                 _this.initialResourceId = info.resourceId;
-                var appsNode_1 = new apps_node_1.AppsNode(_this, _this._subscriptionsStream, _this._searchTermStream, _this.resourceId);
                 _this.rootNode = new tree_node_1.TreeNode(_this, null, null);
+                var appsNode_1 = new apps_node_1.AppsNode(_this, _this.rootNode, _this._subscriptionsStream, _this._searchTermStream, _this.resourceId);
                 _this.rootNode.children = [appsNode_1];
                 _this.rootNode.isExpanded = true;
+                appsNode_1.parent = _this.rootNode;
                 // Need to allow the appsNode to wire up its subscriptions
                 setTimeout(function () {
                     appsNode_1.select();
@@ -121,7 +124,7 @@ var SideNavComponent = (function () {
             else {
                 _this.initialResourceId = _this.tryFunctionApp.site.id;
             }
-            var appNode = new app_node_1.AppNode(_this, _this.tryFunctionApp.site, null, [], false);
+            var appNode = new app_node_1.AppNode(_this, _this.tryFunctionApp.site, _this.rootNode, [], false);
             appNode.select();
             _this.rootNode = new tree_node_1.TreeNode(_this, null, null);
             _this.rootNode.children = [appNode];
@@ -137,6 +140,76 @@ var SideNavComponent = (function () {
         enumerable: true,
         configurable: true
     });
+    SideNavComponent.prototype.ngAfterViewInit = function () {
+        // Search box is not available for Try Functions
+        if (this.searchBox) {
+            this.searchBox.focus();
+        }
+    };
+    SideNavComponent.prototype.onFocus = function (event) {
+        if (!this._focusedNode) {
+            this._focusedNode = this.rootNode.children[0];
+            this._iterator = new tree_node_iterator_1.TreeNodeIterator(this._focusedNode);
+        }
+        this._focusedNode.isFocused = true;
+    };
+    SideNavComponent.prototype.onBlur = function (event) {
+        if (this._focusedNode) {
+            // Keep the focused node around in case user navigates back to it
+            this._focusedNode.isFocused = false;
+        }
+    };
+    SideNavComponent.prototype.onKeyDown = function (event) {
+        if (event.keyCode === constants_1.KeyCodes.arrowDown) {
+            this._moveDown();
+        }
+        else if (event.keyCode === constants_1.KeyCodes.arrowUp) {
+            this._moveUp();
+        }
+        else if (event.keyCode === constants_1.KeyCodes.enter) {
+            this._focusedNode.select();
+        }
+        else if (event.keyCode === constants_1.KeyCodes.arrowRight) {
+            if (this._focusedNode.showExpandIcon && !this._focusedNode.isExpanded) {
+                this._focusedNode.toggle(event);
+            }
+            else {
+                this._moveDown();
+            }
+        }
+        else if (event.keyCode === constants_1.KeyCodes.arrowLeft) {
+            if (this._focusedNode.showExpandIcon && this._focusedNode.isExpanded) {
+                this._focusedNode.toggle(event);
+            }
+            else {
+                this._moveUp();
+            }
+        }
+    };
+    SideNavComponent.prototype._moveDown = function () {
+        var nextNode = this._iterator.next();
+        if (nextNode) {
+            this._focusedNode.isFocused = false;
+            this._focusedNode = nextNode;
+        }
+        this._focusedNode.isFocused = true;
+    };
+    SideNavComponent.prototype._moveUp = function () {
+        var prevNode = this._iterator.previous();
+        if (prevNode) {
+            this._focusedNode.isFocused = false;
+            this._focusedNode = prevNode;
+        }
+        this._focusedNode.isFocused = true;
+    };
+    SideNavComponent.prototype._changeFocus = function (node) {
+        if (this._focusedNode) {
+            this._focusedNode.isFocused = false;
+            node.isFocused = true;
+            this._iterator = new tree_node_iterator_1.TreeNodeIterator(node);
+            this._focusedNode = node;
+        }
+    };
     SideNavComponent.prototype.updateView = function (newSelectedNode, newDashboardType, force) {
         if (this.selectedNode) {
             if (!force && this.selectedNode === newSelectedNode && this.selectedDashboardType === newDashboardType) {
@@ -163,6 +236,7 @@ var SideNavComponent = (function () {
         this.treeViewInfoEvent.emit(viewInfo);
         this._updateTitle(newSelectedNode);
         this.portalService.closeBlades();
+        this._changeFocus(newSelectedNode);
         return newSelectedNode.handleSelection();
     };
     SideNavComponent.prototype._logDashboardTypeChange = function (oldDashboard, newDashboard) {
@@ -314,6 +388,14 @@ __decorate([
     core_1.Output(),
     __metadata("design:type", core_1.EventEmitter)
 ], SideNavComponent.prototype, "treeViewInfoEvent", void 0);
+__decorate([
+    core_1.ViewChild('treeViewContainer'),
+    __metadata("design:type", Object)
+], SideNavComponent.prototype, "treeViewContainer", void 0);
+__decorate([
+    core_1.ViewChild(search_box_component_1.SearchBoxComponent),
+    __metadata("design:type", search_box_component_1.SearchBoxComponent)
+], SideNavComponent.prototype, "searchBox", void 0);
 SideNavComponent = __decorate([
     core_1.Component({
         selector: 'side-nav',

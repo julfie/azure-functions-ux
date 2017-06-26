@@ -10,6 +10,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+var edit_mode_helper_1 = require("./../shared/Utilities/edit-mode.helper");
 var Observable_1 = require("rxjs/Observable");
 require("rxjs/add/operator/map");
 require("rxjs/add/operator/switchMap");
@@ -23,19 +24,31 @@ var function_node_1 = require("./function-node");
 var FunctionsNode = (function (_super) {
     __extends(FunctionsNode, _super);
     function FunctionsNode(sideNav, functionApp, parentNode) {
-        var _this = _super.call(this, sideNav, functionApp.site.id + "/functions", parentNode) || this;
+        var _this = _super.call(this, sideNav, functionApp.site.id + '/functions', parentNode) || this;
         _this.functionApp = functionApp;
         _this.title = _this.sideNav.translateService.instant(portal_resources_1.PortalResources.functions);
         _this.dashboardType = dashboard_type_1.DashboardType.functions;
         _this.newDashboardType = dashboard_type_1.DashboardType.createFunctionAutoDetect;
-        _this.nodeClass = "tree-node collection-node";
-        _this.iconClass = "tree-node-collection-icon";
-        _this.iconUrl = "images/BulletList.svg";
+        _this.nodeClass = 'tree-node collection-node';
+        _this.iconClass = 'tree-node-collection-icon';
+        _this.iconUrl = 'images/BulletList.svg';
+        functionApp.getFunctionAppEditMode()
+            .map(edit_mode_helper_1.EditModeHelper.isReadOnly)
+            .subscribe(function (isReadOnly) {
+            if (isReadOnly) {
+                _this.title = _this.sideNav.translateService.instant(portal_resources_1.PortalResources.functions) + " (" + _this.sideNav.translateService.instant(portal_resources_1.PortalResources.appFunctionSettings_readOnlyMode) + ")";
+                _this.newDashboardType = dashboard_type_1.DashboardType.none;
+            }
+            else {
+                _this.title = _this.sideNav.translateService.instant(portal_resources_1.PortalResources.functions);
+                _this.newDashboardType = dashboard_type_1.DashboardType.createFunctionAutoDetect;
+            }
+        });
         return _this;
     }
     FunctionsNode.prototype.loadChildren = function () {
         var _this = this;
-        if (this.functionApp.site.properties.state === "Running") {
+        if (this.functionApp.site.properties.state === 'Running') {
             return Observable_1.Observable.zip(this.sideNav.authZService.hasPermission(this.functionApp.site.id, [authz_service_1.AuthzService.writeScope]), this.sideNav.authZService.hasReadOnlyLock(this.functionApp.site.id), function (p, l) { return ({ hasWritePermission: p, hasReadOnlyLock: l }); })
                 .switchMap(function (r) {
                 if (r.hasWritePermission && !r.hasReadOnlyLock) {
@@ -91,8 +104,6 @@ var FunctionsNode = (function (_super) {
     };
     FunctionsNode.prototype._updateTreeForStartedSite = function () {
         var _this = this;
-        this.title = this.sideNav.translateService.instant(portal_resources_1.PortalResources.sidebar_Functions);
-        this.newDashboardType = dashboard_type_1.DashboardType.createFunctionAutoDetect;
         this.showExpandIcon = true;
         if (this.parent.inSelectedTree) {
             this.inSelectedTree = true;

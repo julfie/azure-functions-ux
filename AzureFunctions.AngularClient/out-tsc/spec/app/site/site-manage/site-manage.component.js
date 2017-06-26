@@ -193,7 +193,7 @@ var SiteManageComponent = (function () {
             new feature_item_2.BladeFeature(this._translateService.instant(portal_resources_1.PortalResources.feature_allSettingsName), this._translateService.instant(portal_resources_1.PortalResources.feature_allSettingsName) +
                 " " + this._translateService.instant(portal_resources_1.PortalResources.supportRequest) +
                 " " + this._translateService.instant(portal_resources_1.PortalResources.scale), this._translateService.instant(portal_resources_1.PortalResources.feature_allSettingsInfo), "images/webapp.svg", {
-                detailBlade: "WebsiteBlade",
+                detailBlade: "AppsOverviewBlade",
                 detailBladeInputs: {
                     id: site.id
                 }

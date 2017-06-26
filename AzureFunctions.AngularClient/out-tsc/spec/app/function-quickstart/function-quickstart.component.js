@@ -111,7 +111,8 @@ var FunctionQuickstartComponent = (function () {
                         message: _this._translateService.instant(portal_resources_1.PortalResources.functionCreateErrorMessage),
                         details: _this._translateService.instant(portal_resources_1.PortalResources.functionCreateErrorDetails, { error: JSON.stringify(e) }),
                         errorId: error_ids_1.ErrorIds.unableToCreateFunction,
-                        errorType: error_event_1.ErrorType.UserError
+                        errorType: error_event_1.ErrorType.UserError,
+                        resourceId: _this.functionApp.site.id
                     });
                     _this._aiService.trackEvent(error_ids_1.ErrorIds.unableToCreateFunction, {
                         exception: e

@@ -1,16 +1,14 @@
-/* tslint:disable:no-unused-variable */
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var app_module_1 = require("./../../app.module");
+/* tslint:disable:no-unused-variable */
 var testing_1 = require("@angular/core/testing");
-var ai_service_1 = require("./ai.service");
 describe('Service: Ai', function () {
     beforeEach(function () {
-        testing_1.TestBed.configureTestingModule({
-            providers: [ai_service_1.AiService]
-        });
+        testing_1.TestBed.configureTestingModule(app_module_1.AppModule.moduleDefinition);
     });
-    it('should ...', testing_1.inject([ai_service_1.AiService], function (service) {
-        expect(service).toBeTruthy();
-    }));
+    // it('should ...', inject([AiService], (service: AiService) => {
+    //   expect(service).toBeTruthy();
+    // }));
 });
 //# sourceMappingURL=ai.service.spec.js.map

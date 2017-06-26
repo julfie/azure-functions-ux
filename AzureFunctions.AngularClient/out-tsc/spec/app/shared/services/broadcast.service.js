@@ -105,14 +105,6 @@ var BroadcastService = (function () {
                 return this.resetKeySelection;
             case broadcast_event_1.BroadcastEvent.RefreshPortal:
                 return this.refreshPortal;
-            case broadcast_event_1.BroadcastEvent.ApiProxyAdded:
-                return this.apiProxyAddedEvent;
-            case broadcast_event_1.BroadcastEvent.ApiProxyDeleted:
-                return this.apiProxyDeletedEvent;
-            case broadcast_event_1.BroadcastEvent.ApiProxySelected:
-                return this.apiProxySelectedEvent;
-            case broadcast_event_1.BroadcastEvent.ApiProxyUpdated:
-                return this.apiProxyUpdatedEvent;
             case broadcast_event_1.BroadcastEvent.ClearError:
                 return this.clearErrorEvent;
         }

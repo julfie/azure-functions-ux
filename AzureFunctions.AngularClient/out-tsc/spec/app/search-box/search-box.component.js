@@ -30,6 +30,9 @@ var SearchBoxComponent = (function () {
         this.value = "";
         this.onClear.next(null);
     };
+    SearchBoxComponent.prototype.focus = function () {
+        this.searchTextBox.nativeElement.focus();
+    };
     return SearchBoxComponent;
 }());
 __decorate([
@@ -52,6 +55,10 @@ __decorate([
     core_1.Output(),
     __metadata("design:type", Object)
 ], SearchBoxComponent.prototype, "onClear", void 0);
+__decorate([
+    core_1.ViewChild('searchTextBox'),
+    __metadata("design:type", Object)
+], SearchBoxComponent.prototype, "searchTextBox", void 0);
 SearchBoxComponent = __decorate([
     core_1.Component({
         selector: 'search-box',

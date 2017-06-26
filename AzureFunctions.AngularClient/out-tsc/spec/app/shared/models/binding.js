@@ -41,6 +41,7 @@ var ResourceType;
     ResourceType[ResourceType["ServiceBus"] = "ServiceBus"] = "ServiceBus";
     ResourceType[ResourceType["DocumentDB"] = "DocumentDB"] = "DocumentDB";
     ResourceType[ResourceType["ApiHub"] = "ApiHub"] = "ApiHub";
+    ResourceType[ResourceType["AppSetting"] = "AppSetting"] = "AppSetting";
 })(ResourceType = exports.ResourceType || (exports.ResourceType = {}));
 var SettingType = (function () {
     function SettingType() {

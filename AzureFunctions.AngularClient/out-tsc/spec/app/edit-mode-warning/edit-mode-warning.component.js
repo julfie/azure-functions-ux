@@ -22,22 +22,23 @@ var EditModeWarningComponent = (function () {
     }
     EditModeWarningComponent.prototype.ngOnInit = function () {
         var _this = this;
-        this.functionApp
-            .getFunctionAppEditMode()
-            .subscribe(function (editMode) {
-            if (editMode === function_app_edit_mode_1.FunctionAppEditMode.ReadOnly) {
-                _this.readOnly = true;
-            }
-            else if (editMode === function_app_edit_mode_1.FunctionAppEditMode.ReadOnlySourceControlled) {
-                _this.readOnlySourceControlled = true;
-            }
-            else if (editMode === function_app_edit_mode_1.FunctionAppEditMode.ReadWriteSourceControlled) {
-                _this.readWriteSourceControlled = true;
-            }
-            else if (editMode === function_app_edit_mode_1.FunctionAppEditMode.ReadOnlySlots) {
-                _this.readOnlySlots = true;
-            }
-        });
+        this.functionApp &&
+            this.functionApp
+                .getFunctionAppEditMode()
+                .subscribe(function (editMode) {
+                if (editMode === function_app_edit_mode_1.FunctionAppEditMode.ReadOnly) {
+                    _this.readOnly = true;
+                }
+                else if (editMode === function_app_edit_mode_1.FunctionAppEditMode.ReadOnlySourceControlled) {
+                    _this.readOnlySourceControlled = true;
+                }
+                else if (editMode === function_app_edit_mode_1.FunctionAppEditMode.ReadWriteSourceControlled) {
+                    _this.readWriteSourceControlled = true;
+                }
+                else if (editMode === function_app_edit_mode_1.FunctionAppEditMode.ReadOnlySlots) {
+                    _this.readOnlySlots = true;
+                }
+            });
     };
     EditModeWarningComponent.prototype.onFunctionAppSettingsClicked = function () {
         this.appNode.openSettings();

@@ -9,6 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var global_state_service_1 = require("./../shared/services/global-state.service");
 var core_1 = require("@angular/core");
 var Observable_1 = require("rxjs/Observable");
 require("rxjs/add/observable/timer");
@@ -18,16 +19,15 @@ var broadcast_service_1 = require("../shared/services/broadcast.service");
 var broadcast_event_1 = require("../shared/models/broadcast-event");
 var portal_service_1 = require("../shared/services/portal.service");
 var error_event_1 = require("../shared/models/error-event");
-var functions_service_1 = require("./../shared/services/functions.service");
 var ErrorListComponent = (function () {
     // TODO: _portalService is used in the view to get sessionId. Change this when sessionId is observable.
-    function ErrorListComponent(_broadcastService, _portalService, _translateService, _aiService, _functionsService) {
+    function ErrorListComponent(_broadcastService, _portalService, _translateService, _aiService, _globalStateService) {
         var _this = this;
         this._broadcastService = _broadcastService;
         this._portalService = _portalService;
         this._translateService = _translateService;
         this._aiService = _aiService;
-        this._functionsService = _functionsService;
+        this._globalStateService = _globalStateService;
         this.errorList = [];
         _broadcastService.subscribe(broadcast_event_1.BroadcastEvent.Error, function (error) {
             if (error && error.message && !error.message.startsWith('<!DOC')) {
@@ -54,7 +54,7 @@ var ErrorListComponent = (function () {
                             message: error.message,
                             errorId: error.errorId,
                             displayedGeneric: false.toString(),
-                            appName: _this._functionsService.getFunctionAppArmId()
+                            appName: error.resourceId
                         });
                     }
                 }
@@ -63,14 +63,14 @@ var ErrorListComponent = (function () {
                 if (error) {
                     _this._aiService.trackEvent('/errors/portal/unknown', {
                         error: error.details,
-                        appName: _this._functionsService.getFunctionAppArmId(),
+                        appName: error.resourceId,
                         displayedGeneric: true.toString()
                     });
                 }
                 else {
                     _this._aiService.trackEvent('/errors/portal/unknown', {
                         error: 'no error info',
-                        appName: _this._functionsService.getFunctionAppArmId(),
+                        appName: error.resourceId,
                         displayedGeneric: true.toString()
                     });
                 }
@@ -84,7 +84,6 @@ var ErrorListComponent = (function () {
                 _this.errorList = _this.errorList.filter(function (e) { return e.errorIds.length !== 0; });
                 _this._aiService.trackEvent('/errors/auto-cleared', {
                     errorId: errorId,
-                    appName: _this._functionsService.getFunctionAppArmId()
                 });
             }
         });
@@ -110,7 +109,7 @@ ErrorListComponent = __decorate([
         portal_service_1.PortalService,
         core_2.TranslateService,
         ai_service_1.AiService,
-        functions_service_1.FunctionsService])
+        global_state_service_1.GlobalStateService])
 ], ErrorListComponent);
 exports.ErrorListComponent = ErrorListComponent;
 //# sourceMappingURL=error-list.component.js.map

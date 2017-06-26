@@ -21,7 +21,7 @@ var Constants = (function () {
 }());
 Constants.serviceHost = window.location.hostname === "localhost" || window.appsvc.env.runtimeType === "Standalone"
     ? "https://" + window.location.hostname + ":" + window.location.port + "/"
-    : '';
+    : "https://" + window.location.hostname + "/";
 Constants.nodeVersion = '6.5.0';
 Constants.latest = 'latest';
 Constants.disabled = 'disabled';
@@ -105,4 +105,50 @@ var Links = (function () {
 }());
 Links.standaloneCreateLearnMore = "https://go.microsoft.com/fwlink/?linkid=848756";
 exports.Links = Links;
+var Order = (function () {
+    function Order() {
+    }
+    return Order;
+}());
+Order.templateOrder = [
+    'HttpTrigger-',
+    'TimerTrigger-',
+    'QueueTrigger-',
+    'BlobTrigger-',
+    'EventHubTrigger-',
+    'ServiceBusQueueTrigger-',
+    'ServiceBusTopicTrigger-',
+    'GenericWebHook-',
+    'GitHubCommenter-',
+    'GitHubWebHook-',
+    'HttpGET(CRUD)-',
+    'HttpPOST(CRUD)-',
+    'HttpPUT(CRUD)-',
+    'HttpTriggerWithParameters-',
+    'ScheduledMail-',
+    'SendGrid-',
+    'FaceLocator-',
+    'ImageResizer-',
+    'SasToken-',
+    'ManualTrigger-',
+    'CDS-',
+    'AppInsightsHttpAvailability-',
+    'AppInsightsRealtimePowerBI-',
+    'AppInsightsScheduledAnalytics-',
+    'AppInsightsScheduledDigest-',
+    'ExternalFileTrigger-',
+    'ExternalTable-'
+];
+exports.Order = Order;
+var KeyCodes = (function () {
+    function KeyCodes() {
+    }
+    return KeyCodes;
+}());
+KeyCodes.enter = 13;
+KeyCodes.arrowLeft = 37;
+KeyCodes.arrowUp = 38;
+KeyCodes.arrowRight = 39;
+KeyCodes.arrowDown = 40;
+exports.KeyCodes = KeyCodes;
 //# sourceMappingURL=constants.js.map

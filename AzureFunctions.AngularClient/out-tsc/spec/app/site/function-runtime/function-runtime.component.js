@@ -77,7 +77,7 @@ var FunctionRuntimeComponent = (function () {
             var appSettings = r.appSettingsResponse.json();
             _this.functionApp = r.functionApp;
             _this.site = r.siteResponse.json();
-            _this.exactExtensionVersion = r.hostStatus.version;
+            _this.exactExtensionVersion = r.hostStatus ? r.hostStatus.version : '';
             _this._isSlotApp = slots_service_1.SlotsService.isSlot(_this.site.id);
             _this.dailyMemoryTimeQuota = _this.site.properties.dailyMemoryTimeQuota
                 ? _this.site.properties.dailyMemoryTimeQuota.toString()
@@ -190,10 +190,12 @@ var FunctionRuntimeComponent = (function () {
             _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                 message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToUpdateFunctionAppEditMode),
                 errorType: error_event_1.ErrorType.ApiError,
-                errorId: error_ids_1.ErrorIds.unableToUpdateFunctionAppEditMode
+                errorId: error_ids_1.ErrorIds.unableToUpdateFunctionAppEditMode,
+                resourceId: _this.functionApp.site.id
             });
         })
             .retry()
+            .mergeMap(function (_) { return _this.functionApp.getFunctionAppEditMode(); })
             .subscribe(function (fi) {
             _this._globalStateService.clearBusyState();
         });
@@ -204,13 +206,6 @@ var FunctionRuntimeComponent = (function () {
             _this._cacheService.postArm(_this.site.id + "/config/appsettings/list", true)
                 .mergeMap(function (r) {
                 return _this._slotsService.setStatusOfSlotOptIn(_this.site, r.json(), slotsSettingsValue);
-            })
-                .flatMap(function (r) {
-                return _this._cacheService.putArm(_this.site.id + "/config/slotConfigNames", _this._armService.websiteApiVersion, JSON.stringify({
-                    properties: {
-                        AppSettingNames: [""]
-                    }
-                }));
             })
                 .do(null, function (e) {
                 _this._globalStateService.clearBusyState();
@@ -329,6 +324,9 @@ var FunctionRuntimeComponent = (function () {
         return this._cacheService.putArm(appSettings.id, this._armService.websiteApiVersion, appSettings);
     };
     FunctionRuntimeComponent.prototype._updateProxiesVersion = function (site, appSettings, value) {
+        if (value !== constants_1.Constants.disabled) {
+            this._aiService.trackEvent('/actions/proxy/enabled');
+        }
         if (appSettings[constants_1.Constants.routingExtensionVersionAppSettingName]) {
             delete appSettings.properties[constants_1.Constants.routingExtensionVersionAppSettingName];
         }

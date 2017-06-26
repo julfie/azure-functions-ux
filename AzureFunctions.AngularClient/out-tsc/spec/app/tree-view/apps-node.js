@@ -28,8 +28,8 @@ var broadcast_event_1 = require("../shared/models/broadcast-event");
 var error_event_1 = require("../shared/models/error-event");
 var AppsNode = (function (_super) {
     __extends(AppsNode, _super);
-    function AppsNode(sideNav, _subscriptionsStream, _searchTermStream, _initialResourceId) {
-        var _this = _super.call(this, sideNav, null, null) || this;
+    function AppsNode(sideNav, rootNode, _subscriptionsStream, _searchTermStream, _initialResourceId) {
+        var _this = _super.call(this, sideNav, null, rootNode) || this;
         _this._subscriptionsStream = _subscriptionsStream;
         _this._searchTermStream = _searchTermStream;
         _this._initialResourceId = _initialResourceId;
@@ -123,7 +123,8 @@ var AppsNode = (function (_super) {
                 message: err.message,
                 details: err.code,
                 errorId: error_ids_1.ErrorIds.failedToQueryArmResource,
-                errorType: error_event_1.ErrorType.ApiError
+                errorType: error_event_1.ErrorType.ApiError,
+                resourceId: 'none'
             });
             return Observable_1.Observable.of(null);
         })

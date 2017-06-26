@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var portal_service_1 = require("./portal.service");
 var http_1 = require("@angular/http");
 // Used so that the UserService can do initialization work without having to depend
 // on the LanguageService, which would create a circular dependency
@@ -9,8 +10,7 @@ var LanguageServiceHelper = (function () {
     LanguageServiceHelper.getLanguageAndRuntime = function (startupInfo, runtime) {
         var lang = 'en';
         runtime = runtime ? runtime : 'default';
-        // If in IFrame
-        if (window.parent !== window) {
+        if (portal_service_1.PortalService.inIFrame()) {
             // Effective language has language and formatting information eg: "en.en-us"
             lang = startupInfo.effectiveLocale.split('.')[0];
         }

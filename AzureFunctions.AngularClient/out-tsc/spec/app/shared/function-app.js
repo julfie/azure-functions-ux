@@ -9,6 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var Subject_1 = require("rxjs/Subject");
 var slots_service_1 = require("app/shared/services/slots.service");
 var http_1 = require("@angular/http");
 var Observable_1 = require("rxjs/Observable");
@@ -144,7 +145,8 @@ var FunctionApp = (function () {
                                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                                     message: diagnosticsResults[i].successResult.message + " " + diagnosticsResults[i].successResult.userAction,
                                     errorId: diagnosticsResults[i].successResult.actionId,
-                                    errorType: diagnosticsResults[i].successResult.isTerminating ? error_event_1.ErrorType.Fatal : error_event_1.ErrorType.UserError
+                                    errorType: diagnosticsResults[i].successResult.isTerminating ? error_event_1.ErrorType.Fatal : error_event_1.ErrorType.UserError,
+                                    resourceId: _this.site.id
                                 });
                             }
                         }
@@ -197,29 +199,6 @@ var FunctionApp = (function () {
         })
             .retryWhen(this.retryAntares);
     };
-    FunctionApp.prototype.getParameterByName = function (url, name) {
-        if (url === null) {
-            url = window.location.href;
-        }
-        name = name.replace(/[\[\]]/g, '\\$&');
-        var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
-        var results = regex.exec(url);
-        if (!results) {
-            return null;
-        }
-        if (!results[2]) {
-            return '';
-        }
-        return decodeURIComponent(results[2].replace(/\+/g, ' '));
-    };
-    //setScmParams(fc: FunctionContainer) {
-    //     this._scmUrl = `https://${fc.properties.hostNameSslStates.find(s => s.hostType === 1).name}`;
-    //     this.mainSiteUrl = `https://${fc.properties.defaultHostName}`;
-    //     this.siteName = fc.name;
-    //     if (fc.tryScmCred != null) {
-    //         this._globalStateService.ScmCreds = fc.tryScmCred;
-    //     }
-    // }
     FunctionApp.prototype.getFunctions = function () {
         var _this = this;
         return this._cacheService.get(this._scmUrl + "/api/functions", false, this.getScmSiteHeaders())
@@ -227,7 +206,9 @@ var FunctionApp = (function () {
             .retryWhen(this.retryAntares)
             .map(function (r) {
             try {
-                return r.json();
+                var fcs = r.json();
+                fcs.forEach(function (fc) { return fc.functionApp = _this; });
+                return fcs;
             }
             catch (e) {
                 // We have seen this happen when kudu was returning JSON that contained
@@ -236,7 +217,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_parsingFunctionListReturenedFromKudu),
                     errorId: error_ids_1.ErrorIds.deserializingKudusFunctionList,
-                    errorType: error_event_1.ErrorType.Fatal
+                    errorType: error_event_1.ErrorType.Fatal,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.deserializingKudusFunctionList, {
                     error: e,
@@ -250,7 +232,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToRetrieveFunctionListFromKudu),
                     errorId: error_ids_1.ErrorIds.unableToRetrieveFunctionsList,
-                    errorType: error_event_1.ErrorType.RuntimeError
+                    errorType: error_event_1.ErrorType.RuntimeError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToRetrieveFunctionsList, {
                     content: error.text(),
@@ -271,14 +254,15 @@ var FunctionApp = (function () {
         }, 0).delay(200); })
             .catch(function (_) { return Observable_1.Observable.of({
             json: function () { return {}; }
-        }); }), this._cacheService.get(constants_1.Constants.serviceHost + '/schemas/proxies.json', false, this.getScmSiteHeaders()), function (p, s) { return ({ proxies: p.json(), schema: s.json() }); }).map(function (r) {
+        }); }), this._cacheService.get('assets/schemas/proxies.json', false, this.getPortalHeaders()), function (p, s) { return ({ proxies: p.json(), schema: s.json() }); }).map(function (r) {
             if (r.proxies.proxies) {
                 var validateResult = jsonschema.validate(r.proxies, r.schema).toString();
                 if (validateResult) {
                     _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                         message: _this._translateService.instant(portal_resources_1.PortalResources.error_schemaValidationProxies) + ". " + validateResult,
                         errorId: error_ids_1.ErrorIds.proxySchemaValidationFails,
-                        errorType: error_event_1.ErrorType.Fatal
+                        errorType: error_event_1.ErrorType.Fatal,
+                        resourceId: _this.site.id
                     });
                     return api_proxy_1.ApiProxy.fromJson({});
                 }
@@ -309,7 +293,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToGetFileContentFromKudu, { fileName: fileName }),
                     errorId: error_ids_1.ErrorIds.unableToRetrieveFileContent + fileName,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToRetrieveFileContent, {
                     fileHref: fileHref,
@@ -335,7 +320,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToSaveFileContentThroughKudu, { fileName: fileName }),
                     errorId: error_ids_1.ErrorIds.unableToSaveFileContent + fileName,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToSaveFileContent, {
                     fileHref: fileHref,
@@ -361,7 +347,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToDeleteFileThroughKudu, { fileName: fileName }),
                     errorId: error_ids_1.ErrorIds.unableToDeleteFile + fileName,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToDeleteFile, {
                     fileHref: fileHref,
@@ -421,7 +408,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToCreateFunction, { functionName: functionName }),
                     errorId: error_ids_1.ErrorIds.unableToCreateFunction + functionName,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToCreateFunction, {
                     content: error.text(),
@@ -450,7 +438,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToCreateFunction, { functionName: functionName }),
                     errorId: error_ids_1.ErrorIds.unableToCreateFunction + functionName,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToCreateFunction, {
                     content: error.text(),
@@ -579,7 +568,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToDeleteFunction, { functionName: functionInfo.name }),
                     errorId: error_ids_1.ErrorIds.unableToDeleteFunction + functionInfo.name,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToDeleteFunction, {
                     content: error.text(),
@@ -610,7 +600,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_UnableToRetrieveSecretsFileFromKudu, { functionName: fi.name }),
                     errorId: error_ids_1.ErrorIds.unableToRetrieveSecretsFileFromKudu + fi.name,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToRetrieveSecretsFileFromKudu, {
                     status: error.status.toString(),
@@ -634,7 +625,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToRetrieveRuntimeConfig),
                     errorId: error_ids_1.ErrorIds.unableToRetrieveRuntimeConfig,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToRetrieveRuntimeConfig, {
                     status: error.status.toString(),
@@ -653,7 +645,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToUpdateFunction, { functionName: fi.name }),
                     errorId: error_ids_1.ErrorIds.unableToUpdateFunction + fi.name,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToUpdateFunction, {
                     status: error.status.toString(),
@@ -675,14 +668,12 @@ var FunctionApp = (function () {
     FunctionApp.prototype.getHostSecretsFromScm = function () {
         var _this = this;
         return this.getAuthSettings()
-            .mergeMap(function (r) {
-            return r.clientCertEnabled
+            .mergeMap(function (authSettings) {
+            return authSettings.clientCertEnabled
                 ? Observable_1.Observable.of()
                 : _this._http.get(_this._scmUrl + "/api/functions/admin/token", { headers: _this.getScmSiteHeaders() })
                     .retryWhen(_this.retryAntares)
-                    .map(function (r) {
-                    return r.json();
-                })
+                    .map(function (r) { return r.json(); })
                     .mergeMap(function (token) {
                     // Call the main site to get the masterKey
                     // build authorization header
@@ -707,6 +698,13 @@ var FunctionApp = (function () {
                             return errorCount + 1;
                         }
                     }, 0).delay(1000); })
+                        .catch(function (e) { return _this._http.get(_this.mainSiteUrl + "/admin/host/status", { headers: authHeader })
+                        .do(null, function (_) { return _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
+                        message: _this._translateService.instant(portal_resources_1.PortalResources.error_functionRuntimeIsUnableToStart),
+                        errorId: error_ids_1.ErrorIds.functionRuntimeIsUnableToStart,
+                        errorType: error_event_1.ErrorType.Fatal,
+                        resourceId: _this.site.id
+                    }); }).map(function (_) { throw e; }); }) // if /status call is successful, then throw the original error
                         .do(function (r) {
                         // Since we fall back to kudu above, use a union of kudu and runtime types.
                         var key = r.json();
@@ -717,7 +715,8 @@ var FunctionApp = (function () {
                             _this.masterKey = key.value;
                         }
                     });
-                }).do(function () {
+                })
+                    .do(function () {
                     _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.ClearError, error_ids_1.ErrorIds.unableToRetrieveRuntimeKeyFromScm);
                 }, function (error) {
                     if (!error.isHandled) {
@@ -727,7 +726,21 @@ var FunctionApp = (function () {
                                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToDecryptKeys),
                                     errorId: error_ids_1.ErrorIds.unableToDecryptKeys,
-                                    errorType: error_event_1.ErrorType.RuntimeError
+                                    errorType: error_event_1.ErrorType.RuntimeError,
+                                    resourceId: _this.site.id
+                                });
+                                _this.trackEvent(error_ids_1.ErrorIds.unableToDecryptKeys, {
+                                    content: error.text(),
+                                    status: error.status.toString()
+                                });
+                                return;
+                            }
+                            else if (exception.message || exception.messsage) {
+                                _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
+                                    message: exception.message || exception.messsage,
+                                    errorId: error_ids_1.ErrorIds.unableToDecryptKeys,
+                                    errorType: error_event_1.ErrorType.RuntimeError,
+                                    resourceId: _this.site.id
                                 });
                                 _this.trackEvent(error_ids_1.ErrorIds.unableToDecryptKeys, {
                                     content: error.text(),
@@ -742,7 +755,8 @@ var FunctionApp = (function () {
                         _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                             message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToRetrieveRuntimeKey),
                             errorId: error_ids_1.ErrorIds.unableToRetrieveRuntimeKeyFromScm,
-                            errorType: error_event_1.ErrorType.RuntimeError
+                            errorType: error_event_1.ErrorType.RuntimeError,
+                            resourceId: _this.site.id
                         });
                         _this.trackEvent(error_ids_1.ErrorIds.unableToRetrieveRuntimeKeyFromScm, {
                             status: error.status.toString(),
@@ -813,7 +827,8 @@ var FunctionApp = (function () {
                     _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                         message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToRetrieveRuntimeKey),
                         errorId: error_ids_1.ErrorIds.unableToRetrieveRuntimeKeyFromRuntime,
-                        errorType: error_event_1.ErrorType.RuntimeError
+                        errorType: error_event_1.ErrorType.RuntimeError,
+                        resourceId: _this.site.id
                     });
                     _this.trackEvent(error_ids_1.ErrorIds.unableToRetrieveRuntimeKeyFromRuntime, {
                         status: error.status.toString(),
@@ -891,7 +906,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToUpdateFunction, { functionName: fi.name }),
                     errorId: error_ids_1.ErrorIds.unableToUpdateFunction + fi.name,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToUpdateFunction, {
                     status: error.status.toString(),
@@ -958,7 +974,8 @@ var FunctionApp = (function () {
                         _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                             message: _this._translateService.instant(portal_resources_1.PortalResources.error_functionRuntimeIsUnableToStart),
                             errorId: error_ids_1.ErrorIds.functionRuntimeIsUnableToStart,
-                            errorType: error_event_1.ErrorType.RuntimeError
+                            errorType: error_event_1.ErrorType.RuntimeError,
+                            resourceId: _this.site.id
                         });
                         _this.trackEvent(error_ids_1.ErrorIds.functionRuntimeIsUnableToStart, {
                             status: error.status.toString(),
@@ -1041,7 +1058,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToRetrieveDirectoryContent),
                     errorId: error_ids_1.ErrorIds.unableToRetrieveDirectoryContent,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToRetrieveDirectoryContent, {
                     content: error.text(),
@@ -1092,7 +1110,8 @@ var FunctionApp = (function () {
                     _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                         message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToRetrieveFunctionKeys, { functionName: functionInfo.name }),
                         errorId: error_ids_1.ErrorIds.unableToRetrieveFunctionKeys + functionInfo.name,
-                        errorType: error_event_1.ErrorType.RuntimeError
+                        errorType: error_event_1.ErrorType.RuntimeError,
+                        resourceId: _this.site.id
                     });
                     _this.trackEvent(error_ids_1.ErrorIds.unableToRetrieveFunctionKeys, {
                         status: error.status.toString(),
@@ -1141,7 +1160,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToCreateFunctionKey, { functionName: functionInfo.name, keyName: keyName }),
                     errorId: error_ids_1.ErrorIds.unableToCreateFunctionKey + functionInfo + keyName,
-                    errorType: error_event_1.ErrorType.RuntimeError
+                    errorType: error_event_1.ErrorType.RuntimeError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToCreateFunctionKey, {
                     status: error.status.toString(),
@@ -1176,7 +1196,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToDeleteFunctionKey, { functionName: functionInfo.name, keyName: key.name }),
                     errorId: error_ids_1.ErrorIds.unableToDeleteFunctionKey + functionInfo + key.name,
-                    errorType: error_event_1.ErrorType.RuntimeError
+                    errorType: error_event_1.ErrorType.RuntimeError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToDeleteFunctionKey, {
                     status: error.status.toString(),
@@ -1216,7 +1237,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToRenewFunctionKey, { functionName: functionInfo.name, keyName: key.name }),
                     errorId: error_ids_1.ErrorIds.unableToRenewFunctionKey + functionInfo + key.name,
-                    errorType: error_event_1.ErrorType.RuntimeError
+                    errorType: error_event_1.ErrorType.RuntimeError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToRenewFunctionKey, {
                     status: error.status.toString(),
@@ -1257,6 +1279,7 @@ var FunctionApp = (function () {
         // | No   | false         | readWrite       | ReadWrite                     |
         // | No   | false         | readOnly        | ReadOnly                      |
         // | No   | false         | undefined       | ReadWrite                     |
+        var _this = this;
         // | Yes  | true          | readWrite       | ReadWriteSourceControlled     |
         // | Yes  | true          | readOnly        | ReadOnlySourceControlled      |
         // | Yes  | true          | undefined       | ReadOnlySourceControlled      |
@@ -1264,7 +1287,10 @@ var FunctionApp = (function () {
         // | Yes  | false         | readOnly        | ReadOnly                      |
         // | Yes  | false         | undefined       | ReadOnlySlots                 |
         // |______|_______________|_________________|_______________________________|
-        return Observable_1.Observable.zip(this.checkIfSourceControlEnabled(), this._cacheService.postArm(this.site.id + "/config/appsettings/list", true), slots_service_1.SlotsService.isSlot(this.site.id)
+        if (!this._editModeSubject) {
+            this._editModeSubject = new Subject_1.Subject();
+        }
+        Observable_1.Observable.zip(this.checkIfSourceControlEnabled(), this._cacheService.postArm(this.site.id + "/config/appsettings/list", true), slots_service_1.SlotsService.isSlot(this.site.id)
             ? Observable_1.Observable.of(true)
             : this._slotsService.getSlotsList(this.site.id).map(function (r) { return r.length > 0; }), function (a, b, s) { return ({ sourceControlEnabled: a, appSettingsResponse: b, hasSlots: s }); })
             .map(function (result) {
@@ -1284,7 +1310,10 @@ var FunctionApp = (function () {
             else {
                 return result.hasSlots ? function_app_edit_mode_1.FunctionAppEditMode.ReadOnlySlots : function_app_edit_mode_1.FunctionAppEditMode.ReadWrite;
             }
-        });
+        })
+            .catch(function (e) { return Observable_1.Observable.of(function_app_edit_mode_1.FunctionAppEditMode.ReadWrite); })
+            .subscribe(function (r) { return _this._editModeSubject.next(r); });
+        return this._editModeSubject;
     };
     FunctionApp.prototype.getAuthSettings = function () {
         var _this = this;
@@ -1315,7 +1344,7 @@ var FunctionApp = (function () {
             _this.trackEvent(error_ids_1.ErrorIds.errorCallingDiagnoseApi, {
                 error: error.text(),
                 status: error.status.toString(),
-                armId: functionContainer.id
+                resourceId: functionContainer.id
             });
             return Observable_1.Observable.of([]);
         });
@@ -1547,7 +1576,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToloadGeneratedAPIDefinition),
                     errorId: error_ids_1.ErrorIds.unableToloadGeneratedAPIDefinition,
-                    errorType: error_event_1.ErrorType.RuntimeError
+                    errorType: error_event_1.ErrorType.RuntimeError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToloadGeneratedAPIDefinition, {
                     status: error.status.toString(),
@@ -1568,7 +1598,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToUpdateSwaggerData),
                     errorId: error_ids_1.ErrorIds.unableToUpdateSwaggerData,
-                    errorType: error_event_1.ErrorType.RuntimeError
+                    errorType: error_event_1.ErrorType.RuntimeError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToUpdateSwaggerData, {
                     status: error.status.toString(),
@@ -1585,7 +1616,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToDeleteSwaggerData),
                     errorId: error_ids_1.ErrorIds.unableToDeleteSwaggerData,
-                    errorType: error_event_1.ErrorType.RuntimeError
+                    errorType: error_event_1.ErrorType.RuntimeError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToDeleteSwaggerData, {
                     status: error.status.toString(),
@@ -1605,7 +1637,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToUpdateRuntimeConfig),
                     errorId: error_ids_1.ErrorIds.unableToUpdateRuntimeConfig,
-                    errorType: error_event_1.ErrorType.ApiError
+                    errorType: error_event_1.ErrorType.ApiError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToUpdateRuntimeConfig, {
                     status: error.status.toString(),
@@ -1625,7 +1658,8 @@ var FunctionApp = (function () {
                 _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                     message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToCreateSwaggerKey),
                     errorId: error_ids_1.ErrorIds.unableToCreateSwaggerKey,
-                    errorType: error_event_1.ErrorType.RuntimeError
+                    errorType: error_event_1.ErrorType.RuntimeError,
+                    resourceId: _this.site.id
                 });
                 _this.trackEvent(error_ids_1.ErrorIds.unableToCreateSwaggerKey, {
                     status: error.status.toString(),
@@ -1649,7 +1683,8 @@ var FunctionApp = (function () {
                     _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                         message: _this._translateService.instant(portal_resources_1.PortalResources.error_unableToGetSystemKey, { keyName: constants_1.Constants.swaggerSecretName }),
                         errorId: error_ids_1.ErrorIds.unableToCreateSwaggerKey,
-                        errorType: error_event_1.ErrorType.RuntimeError
+                        errorType: error_event_1.ErrorType.RuntimeError,
+                        resourceId: _this.site.id
                     });
                     _this.trackEvent(error_ids_1.ErrorIds.unableToGetSystemKey, {
                         status: error.status.toString(),
@@ -1721,12 +1756,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], FunctionApp.prototype, "saveFunction", null);
-__decorate([
-    cache_decorator_1.Cache(),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Boolean]),
-    __metadata("design:returntype", Observable_1.Observable)
-], FunctionApp.prototype, "getFunctionHostStatus", null);
 __decorate([
     cache_decorator_1.Cache('href'),
     __metadata("design:type", Function),

@@ -35,7 +35,7 @@ var BackgroundTasksService = (function () {
         this._aiService = _aiService;
         this._applicationRef = _applicationRef;
         this._translateService = _translateService;
-        if (!this._userService.inIFrame) {
+        if (!this._userService.inIFrame && !this._userService.inTab) {
             this.runNonIFrameTasks();
         }
         if (this.isIE()) {

@@ -229,7 +229,8 @@ var FunctionNewComponent = (function () {
             .subscribe(function (res) {
             _this._portalService.logAction("new-function", "success", { template: _this.selectedTemplate.id, name: _this.functionName });
             _this._aiService.trackEvent("new-function", { template: _this.selectedTemplate.id, result: "success", first: "false" });
-            // this._broadcastService.broadcast(BroadcastEvent.FunctionAdded, res);
+            // If someone refreshed the app, it would created a new set of child nodes under the app node.
+            _this.functionsNode = _this.appNode.children.find(function (node) { return node.title === _this.functionsNode.title; });
             _this.functionsNode.addChild(res);
             _this._globalStateService.clearBusyState();
         }, function (e) {

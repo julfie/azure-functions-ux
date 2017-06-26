@@ -15,15 +15,16 @@ var core_2 = require("@ngx-translate/core");
 var api_proxy_1 = require("../shared/models/api-proxy");
 var forms_1 = require("@angular/forms");
 var broadcast_service_1 = require("../shared/services/broadcast.service");
-var broadcast_event_1 = require("../shared/models/broadcast-event");
 var api_new_component_1 = require("../api-new/api-new.component");
 var constants_1 = require("../shared/models/constants");
+var ai_service_1 = require("../shared/services/ai.service");
 var ApiDetailsComponent = (function () {
-    function ApiDetailsComponent(_fb, _globalStateService, _translateService, _broadcastService) {
+    function ApiDetailsComponent(_fb, _globalStateService, _translateService, _broadcastService, _aiService) {
         this._fb = _fb;
         this._globalStateService = _globalStateService;
         this._translateService = _translateService;
         this._broadcastService = _broadcastService;
+        this._aiService = _aiService;
         this.isMethodsVisible = false;
         this.initComplexFrom();
     }
@@ -95,7 +96,7 @@ var ApiDetailsComponent = (function () {
             _this.apiProxies.splice(indexToDelete, 1);
             _this.functionApp.saveApiProxy(api_proxy_1.ApiProxy.toJson(_this.apiProxies, _this._translateService)).subscribe(function () {
                 _this._globalStateService.clearBusyState();
-                //this._broadcastService.broadcast(BroadcastEvent.ApiProxyDeleted, this.apiProxyEdit);
+                _this._aiService.trackEvent('/actions/proxy/delete');
                 _this.proxiesNode.removeChild(_this.apiProxyEdit);
             });
         });
@@ -134,7 +135,6 @@ var ApiDetailsComponent = (function () {
                 }
                 _this.functionApp.saveApiProxy(api_proxy_1.ApiProxy.toJson(_this.apiProxies, _this._translateService)).subscribe(function () {
                     _this._globalStateService.clearBusyState();
-                    _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.ApiProxyUpdated, _this.apiProxyEdit);
                     _this.onReset();
                 });
             });
@@ -145,7 +145,7 @@ var ApiDetailsComponent = (function () {
         this.complexForm = this._fb.group({
             routeTemplate: [null, forms_1.Validators.required],
             methodSelectionType: 'All',
-            backendUri: [null, forms_1.Validators.compose([forms_1.Validators.required, api_new_component_1.ApiNewComponent.validateUrl()])],
+            backendUri: [null, forms_1.Validators.compose([api_new_component_1.ApiNewComponent.validateUrl()])],
             proxyUrl: '',
             method_GET: false,
             method_POST: false,
@@ -178,7 +178,8 @@ ApiDetailsComponent = __decorate([
     __metadata("design:paramtypes", [forms_1.FormBuilder,
         global_state_service_1.GlobalStateService,
         core_2.TranslateService,
-        broadcast_service_1.BroadcastService])
+        broadcast_service_1.BroadcastService,
+        ai_service_1.AiService])
 ], ApiDetailsComponent);
 exports.ApiDetailsComponent = ApiDetailsComponent;
 //# sourceMappingURL=api-details.component.js.map

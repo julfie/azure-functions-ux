@@ -85,7 +85,8 @@ var NoCorsHttpService = (function () {
                     _this._broadcastService.broadcast(broadcast_event_1.BroadcastEvent.Error, {
                         message: _this._translateService.instant(portal_resources_1.PortalResources.error_appOffline),
                         errorId: error_ids_1.ErrorIds.applicationOffline,
-                        errorType: error_event_1.ErrorType.Fatal
+                        errorType: error_event_1.ErrorType.Fatal,
+                        resourceId: url
                     });
                     error.isHandled = true;
                 }

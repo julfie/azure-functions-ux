@@ -157,7 +157,8 @@ var TryLandingComponent = (function () {
                                 message: "" + _this._translateService.instant(portal_resources_1.PortalResources.tryLanding_functionError),
                                 details: _this._translateService.instant(portal_resources_1.PortalResources.tryLanding_functionErrorDetails) + ": " + JSON.stringify(error),
                                 errorId: error_ids_1.ErrorIds.tryAppServiceError,
-                                errorType: error_event_1.ErrorType.Warning
+                                errorType: error_event_1.ErrorType.Warning,
+                                resourceId: 'try-app'
                             });
                             _this.clearBusyState();
                             throw error;
@@ -170,7 +171,8 @@ var TryLandingComponent = (function () {
                         message: "" + _this._translateService.instant(portal_resources_1.PortalResources.tryLanding_functionError),
                         details: _this._translateService.instant(portal_resources_1.PortalResources.tryLanding_functionErrorDetails) + ": " + JSON.stringify(e),
                         errorId: error_ids_1.ErrorIds.tryAppServiceError,
-                        errorType: error_event_1.ErrorType.Warning
+                        errorType: error_event_1.ErrorType.Warning,
+                        resourceId: 'try-app'
                     });
                     throw e;
                 }
@@ -230,7 +232,8 @@ var TryLandingComponent = (function () {
                 message: "" + _this._translateService.instant(portal_resources_1.PortalResources.tryLanding_functionError),
                 details: _this._translateService.instant(portal_resources_1.PortalResources.tryLanding_functionErrorDetails) + ": " + JSON.stringify(e),
                 errorId: error_ids_1.ErrorIds.tryAppServiceError,
-                errorType: error_event_1.ErrorType.Warning
+                errorType: error_event_1.ErrorType.Warning,
+                resourceId: 'try-app'
             });
         });
     };

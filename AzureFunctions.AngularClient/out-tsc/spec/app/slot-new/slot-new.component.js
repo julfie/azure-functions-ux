@@ -121,7 +121,10 @@ var SlotNewComponent = (function () {
             // update notification
             _this._portalService.stopNotification(notificationId, true, _this._translateService.instant(portal_resources_1.PortalResources.slotNew_startCreateSuccessNotifyTitle).format(newSlotName));
             var slotsNode = _this._viewInfo.node;
+            // If someone refreshed the app, it would created a new set of child nodes under the app node.
+            slotsNode = _this._viewInfo.node.parent.children.find(function (node) { return node.title === slotsNode.title; });
             slotsNode.addChild(r.json());
+            slotsNode.isExpanded = true;
         }, function (err) {
             _this._globalStateService.clearBusyState();
             _this._portalService.stopNotification(notificationId, false, _this._translateService.instant(portal_resources_1.PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName));
@@ -129,7 +132,8 @@ var SlotNewComponent = (function () {
                 message: _this._translateService.instant(portal_resources_1.PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName),
                 details: _this._translateService.instant(portal_resources_1.PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName),
                 errorId: error_ids_1.ErrorIds.failedToCreateSlot,
-                errorType: error_event_1.ErrorType.Fatal
+                errorType: error_event_1.ErrorType.Fatal,
+                resourceId: _this._siteObj.id
             });
             _this._aiService.trackEvent(error_ids_1.ErrorIds.failedToCreateApp, { error: err, id: _this._siteObj.id });
         });

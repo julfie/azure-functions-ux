@@ -20,6 +20,7 @@ require("rxjs/add/operator/merge");
 require("rxjs/add/operator/switchMap");
 require("rxjs/add/observable/zip");
 var core_2 = require("@ngx-translate/core");
+var ai_service_1 = require("../shared/services/ai.service");
 var binding_input_1 = require("../shared/models/binding-input");
 var binding_1 = require("../shared/models/binding");
 var binding_manager_1 = require("../shared/models/binding-manager");
@@ -30,12 +31,13 @@ var portal_service_1 = require("../shared/services/portal.service");
 var portal_resources_1 = require("../shared/models/portal-resources");
 var cache_service_1 = require("../shared/services/cache.service");
 var BindingComponent = (function () {
-    function BindingComponent(elementRef, _broadcastService, _portalService, _cacheService, _translateService) {
+    function BindingComponent(elementRef, _broadcastService, _portalService, _cacheService, _translateService, _aiService) {
         var _this = this;
         this._broadcastService = _broadcastService;
         this._portalService = _portalService;
         this._cacheService = _cacheService;
         this._translateService = _translateService;
+        this._aiService = _aiService;
         this.canDelete = true;
         this.canSave = true;
         this.canCancel = true;
@@ -384,10 +386,9 @@ var BindingComponent = (function () {
     };
     BindingComponent.prototype.saveClicked = function () {
         var _this = this;
-        this._portalService.logAction("binding-component", "save-binding", {
-            type: this.bindingValue.type,
-            direction: this.bindingValue.direction
-        });
+        var data = this.getDataToLog();
+        this._portalService.logAction('binding', 'save', data);
+        this._aiService.trackEvent('/binding/save', data);
         this.bindingValue.newBinding = false;
         this.bindingValue.name = this.model.getInput("name").value;
         var selectedStorage;
@@ -460,6 +461,11 @@ var BindingComponent = (function () {
     };
     BindingComponent.prototype.showDoc = function (value) {
         this.isDocShown = value;
+        if (this.isDocShown) {
+            var data = this.getDataToLog();
+            this._portalService.logAction('binding', 'openDocumentation', data);
+            this._aiService.trackEvent('binding/openDocumentation', data);
+        }
     };
     BindingComponent.prototype.onAuth = function () {
         this._portalService.openBlade({
@@ -553,6 +559,10 @@ var BindingComponent = (function () {
                     }
                 }
                 break;
+            case binding_1.ResourceType.AppSetting:
+                for (var key in this._appSettings)
+                    result.push(key);
+                break;
         }
         return result;
     };
@@ -600,6 +610,12 @@ var BindingComponent = (function () {
                 }
             });
         }
+    };
+    BindingComponent.prototype.getDataToLog = function () {
+        return {
+            name: this.bindingValue.type.toString(),
+            direction: this.bindingValue.direction.toString()
+        };
     };
     return BindingComponent;
 }());
@@ -659,7 +675,8 @@ BindingComponent = __decorate([
         broadcast_service_1.BroadcastService,
         portal_service_1.PortalService,
         cache_service_1.CacheService,
-        core_2.TranslateService])
+        core_2.TranslateService,
+        ai_service_1.AiService])
 ], BindingComponent);
 exports.BindingComponent = BindingComponent;
 //# sourceMappingURL=binding.component.js.map
