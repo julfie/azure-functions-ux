@@ -7,7 +7,11 @@
             <div *ngIf="isStandalone" class="vertical-align-center logo-standalone">{{ 'azureFunctionsRuntime' | translate }}</div>
         </div>
 
-        <div class="left vertical-align-center" [class.info-azure]="!isStandalone" [class.info-standalone]="isStandalone" [class.info-no-iframe]="!inIFrame">
+        <!--<div *ngIf="!inIFrame">
+            <div *ngIf="!isStandalone" class=" vertical-align-center function-information">{{ appName | translate }} - {{ fnName | translate}}</div>
+        </div>-->
+
+        <div class="left vertical-align-center" [class.info-azure]="!isStandalone" [class.info-standalone]="isStandalone">
             <span *ngFor="let notification of topBarNotifications; let isFirst = first"
                   [class.top-bar-notification-extra]="!isFirst">
 
@@ -20,7 +24,7 @@
         </div>
 
         <div class="top-bar-tools right vertical-align-center">
-            <span *ngIf="user && currentTenant && !inIFrame"
+            <span *ngIf="user && currentTenant && !inIFrame && !inTab"
                   class="top-bar-tool clickable"
                   [class.top-bar-tool-selected]="showUserMenu"
                   (click)="showUserMenu = !showUserMenu">

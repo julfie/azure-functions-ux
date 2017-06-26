@@ -13,6 +13,7 @@ import {Constants} from '../shared/models/constants';
 import {GlobalStateService} from '../shared/services/global-state.service';
 import {TranslateService, TranslatePipe} from '@ngx-translate/core';
 import {PortalResources} from '../shared/models/portal-resources';
+import { SiteDescriptor, Descriptor, FunctionDescriptor } from "app/shared/resourceDescriptors";
 
 @Component({
   selector: 'top-bar',
@@ -26,12 +27,17 @@ export class TopBarComponent implements OnInit {
     public tenants: TenantInfo[];
     public currentTenant: TenantInfo;
     public inIFrame: boolean;
+    public inTab :boolean;
     public isStandalone : boolean;
     // public needUpdateExtensionVersion;
     private _isFunctionSelected: boolean;
 
     public visible = false;
     public topBarNotifications : TopBarNotification[] = [];
+
+    public resourceId : string;
+    public appName : string;
+    public fnName : string;
 
     // @Output() private functionAppSettingsClicked: EventEmitter<any>;
 
@@ -45,7 +51,20 @@ export class TopBarComponent implements OnInit {
     ) {
         // this.functionAppSettingsClicked = new EventEmitter<any>();
         this.inIFrame = this._userService.inIFrame;
+        this.inTab = this._userService.inTab;
         this.isStandalone = this._configService.isStandalone();
+
+        if (this.inTab) {
+            _userService.getStartupInfo()
+            .first()
+            .subscribe(info =>{
+                this.resourceId = info.resourceId;
+                let descriptor = <SiteDescriptor>Descriptor.getDescriptor(this.resourceId);
+                this.appName = descriptor.site;
+                let fnDescriptor = <FunctionDescriptor>Descriptor.getDescriptor(this.resourceId);
+                this.fnName = fnDescriptor.functionName;
+            });
+        }
 
         this._globalStateService.topBarNotificationsStream
         .subscribe(topBarNotifications =>{
