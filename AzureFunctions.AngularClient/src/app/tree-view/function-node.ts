@@ -19,6 +19,7 @@ export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposa
     public dashboardType = DashboardType.function;
     private _enabledTitle: string;
     private _disabledTitle: string;
+    public supportsTab: true;
 
     constructor(
         sideNav : SideNavComponent,
@@ -34,6 +35,8 @@ export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposa
         const disabledStr = this.sideNav.translateService.instant(PortalResources.disabled).toLocaleLowerCase();
         this._enabledTitle = this.functionInfo.name;
         this._disabledTitle = `(${disabledStr}) ${this.functionInfo.name}`;
+
+        this.supportsTab = true;
     }
 
     // This will be called on every change detection run. So I'm making sure to always
