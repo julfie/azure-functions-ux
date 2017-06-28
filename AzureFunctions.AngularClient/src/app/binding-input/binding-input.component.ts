@@ -1,6 +1,6 @@
 import {Component, Input, Output, ChangeDetectionStrategy, EventEmitter, ViewChild} from '@angular/core';
 import {TranslateService, TranslatePipe} from '@ngx-translate/core';
-import {PopoverContent} from "ng2-popover";
+import {PopoverContent} from 'ng2-popover';
 
 import { BindingInputBase } from '../shared/models/binding-input';
 import {PortalService} from '../shared/services/portal.service';

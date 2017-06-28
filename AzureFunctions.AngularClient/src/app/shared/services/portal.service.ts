@@ -12,28 +12,48 @@ import {BroadcastEvent} from '../models/broadcast-event'
 import {UserService} from './user.service';
 import {AiService} from './ai.service';
 import {SetupOAuthRequest, SetupOAuthResponse} from '../../site/deployment-source/deployment';
+import {LocalStorageService} from './local-storage.service';
+import { SiteDescriptor } from "app/shared/resourceDescriptors";
+// import { MessageLoad } from "app/shared/models/localStorage/local-storage";
+import { Guid } from "app/shared/Utilities/Guid";
+
+class MessageLoad {
+    id : Guid;
+    verb : string;
+    data : any;
+}
 
 @Injectable()
 export class PortalService {
+    public guidId: Guid = null;
     public sessionId = "";
+
+    public startupDict : Map<Guid,StartupInfo> = new Map<Guid,StartupInfo>();
 
     private portalSignature: string = "FxAppBlade";
     private startupInfo: StartupInfo = null;
     private startupInfoObservable : ReplaySubject<StartupInfo>;
     private setupOAuthObservable : Subject<SetupOAuthResponse>;
-    private getAppSettingCallback: (appSettingName: string) => void;
+    private getAppSettingCallback : (appSettingName: string) => void;
     private shellSrc: string;
     private notificationStartStream : Subject<NotificationStartedInfo>;
+    private localStorage : Storage;
+
+    public resourceId : string;
 
     constructor(private _broadcastService : BroadcastService,
-     private _aiService: AiService) {
+                private _aiService : AiService) {
 
         this.startupInfoObservable = new ReplaySubject<StartupInfo>(1);
         this.setupOAuthObservable = new Subject<SetupOAuthResponse>();
         this.notificationStartStream = new Subject<NotificationStartedInfo>();
+        this.localStorage = window.localStorage;
 
         if (PortalService.inIFrame()){
             this.initializeIframe();
+        }
+        if(PortalService.inTab()){
+            this.initializeTab();
         }
     }
 
@@ -47,6 +67,8 @@ export class PortalService {
     }
 
     initializeIframe(): void {
+
+        window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
 
         let shellUrl = decodeURI(window.location.href);
         this.shellSrc = Url.getParameterByName(shellUrl, "trustedAuthority");
@@ -66,6 +88,67 @@ export class PortalService {
                 this.logMessage(LogEntryLevel.Error, error.details);
             }
         });
+    }
+
+    initializeTab(): void {
+
+        //listener to localStorage
+        window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
+
+        if (PortalService.inTab() && this.guidId == null) {
+            // create own id and set
+            this.guidId = Guid.newTinyGuid();
+            //send id back to parent
+           this.returnMessage(this.guidId, "get-startup-info", null);
+        }
+    }
+
+    recieveStorageMessage(item : StorageEvent){
+
+        let msg : MessageLoad = JSON.parse(item.newValue);
+
+        if(!msg){
+            return;
+        }
+
+        console.log(item);
+        if(PortalService.inIFrame() && !PortalService.inTab()){
+            // if parent recieved new id call
+            if (item.key == "get-startup-info") {
+                let id : Guid = msg.id;
+                //send over startupinfo
+                this.getStartupInfo()
+                .take(1)
+                .subscribe(info =>{
+                    let startup : StartupInfo = JSON.parse(JSON.stringify(info));
+                    startup.resourceId = "";
+                    this.returnMessage(id, "startup-info", startup);
+                })
+            }
+        }
+
+        else if(PortalService.inTab()){
+            //if the startup message is meant for the child tab
+            if (msg.id == this.guidId && item.key == "startup-info") {
+                // get new startup info and update
+                let startupInfo : StartupInfo = msg.data;
+                startupInfo.resourceId = window.location.href.split("&")[1];
+                this.startupInfoObservable.next(startupInfo);
+            }
+        }
+
+    }
+
+    private returnMessage(id : Guid, verb : string, data : any) {
+        // return the ready message with guid
+        let returnMessage : MessageLoad = new MessageLoad();
+        returnMessage.id = id;
+        returnMessage.verb = verb;
+        returnMessage.data = data;
+
+        // send and then remove
+        window.localStorage.setItem(verb, JSON.stringify(returnMessage));
+        window.localStorage.removeItem(verb);
     }
 
     openBlade(bladeInfo : OpenBladeInfo, source : string){
@@ -240,5 +323,9 @@ export class PortalService {
 
     public static inIFrame() : boolean{
         return window.parent !== window && window.location.pathname !== "/context.html";
+    }
+
+    public static inTab() : boolean{
+        return window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
     }
 }

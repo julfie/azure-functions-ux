@@ -35,6 +35,7 @@ import { ErrorIds } from '../shared/models/error-ids';
 import {HttpRunModel, Param} from '../shared/models/http-run';
 import {FunctionKey, FunctionKeys} from '../shared/models/function-key';
 import { FunctionAppEditMode } from "app/shared/models/function-app-edit-mode";
+import { LocalStorageService } from "app/shared/services/local-storage.service";
 
 
 @Component({
@@ -89,6 +90,10 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
     public masterKey: string;
 
     public isStandalone : boolean;
+
+    public inTab : boolean = window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
+
+    public rID : string;
 
     public disabled: Observable<boolean>;
 
@@ -358,7 +363,11 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
         if (changes['selectedFunction']) {
             delete this.updatedTestContent;
             delete this.runResult;
-            this.functionSelectStream.next(changes['selectedFunction'].currentValue);
+
+            let selectedFunction = changes['selectedFunction'].currentValue;
+            if(selectedFunction){
+                this.functionSelectStream.next(selectedFunction);
+            }
             }
     }
 
@@ -600,7 +609,7 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
                 });
             });
     }
-
+    
     get codeEditor(): MonacoEditorDirective {
         return this.getMonacoDirective("code");
     }

@@ -38,6 +38,19 @@ export class LocalStorageService {
         }
     }
 
+    storageHandler(message) : void {
+        if (message.key!='message') return;
+        let m = this.getItem("message");
+        var msg = JSON.stringify(m);
+
+        //set action based on received message
+        if (msg == "startup") {
+            //send message back with startup information
+            //and information on which fn to have openS
+        }
+
+    }
+
     private _resetStorage(){
         localStorage.clear();
         localStorage.setItem(this._apiVersionKey, this._apiVersion);            
