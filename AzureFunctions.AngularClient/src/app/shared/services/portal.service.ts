@@ -331,12 +331,7 @@ export class PortalService {
         return window.parent !== window && window.location.pathname !== "/context.html";
     }
 
-<<<<<<< HEAD
-    public static inTab() : boolean{
-        return window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
-=======
     public static inTab(): boolean{
         return (Url.getParameterByName(null, "tabbed") === 'true');
->>>>>>> 8457c3568ee6efbdef100d6dc06c10c254f4f4aa
     }
 }
