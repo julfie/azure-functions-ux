@@ -562,12 +562,6 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
 
     }
 
-   newTab() {
-        //open a new tab with the rousource information
-       this.rID = `${this.functionApp.site.id}/functions/${this.functionInfo.name}/files/${this.fileName}`
-       window.open(`https://localhost:44300/?tabbed=true&${this.rID}`, '_blank');
-    }
-
     cancelCurrentRun() {
         this._globalStateService.clearBusyState();
         if (this.running) {

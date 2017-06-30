@@ -84,16 +84,6 @@
                                     {{ 'cancel' | translate }}
                                 </button>
                             </span>
-                            
-                            <!-- Open the iFrame in a new tab -->
-                            <!-- TODO: strip extra info (only one tab) -->
-                            <span *ngIf="!inTab">
-                                <button *ngIf="!inTab"
-                                        class="custom-button"
-                                        (click)="newTab()">
-                                    <i class="fa fa-external-link"></i>
-                                </button>
-                            </span>
 
                             <div style="flex-grow:1"></div>
 
