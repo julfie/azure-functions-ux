@@ -56,7 +56,10 @@ export class TreeNode implements Disposable, Removable, CanBlockNavChange, Custo
     public disabled = false;
     public inSelectedTree = false;
     public isFocused = false;
+<<<<<<< HEAD
     public showMenu = false;
+=======
+>>>>>>> 8457c3568ee6efbdef100d6dc06c10c254f4f4aa
     public supportsTab = false;
 
     constructor(

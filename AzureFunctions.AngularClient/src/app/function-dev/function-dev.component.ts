@@ -91,9 +91,7 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
 
     public isStandalone : boolean;
 
-    public inTab : boolean = window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
-
-    public rID : string;
+    public inTab : boolean;
 
     public disabled: Observable<boolean>;
 
@@ -117,6 +115,7 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
 
         this.functionInvokeUrl = this._translateService.instant(PortalResources.functionDev_loading);
         this.isStandalone = configService.isStandalone();
+        this.inTab = PortalService.inTab();
 
         this.selectedFileStream = new Subject<VfsObject>();
         this.selectedFileStream

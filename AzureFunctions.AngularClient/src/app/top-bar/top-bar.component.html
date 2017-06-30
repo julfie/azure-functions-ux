@@ -7,8 +7,8 @@
             <div *ngIf="isStandalone" class="vertical-align-center logo-standalone">{{ 'azureFunctionsRuntime' | translate }}</div>
         </div>
 
-        <div *ngIf="!inIFrame" class="left">
-            <div *ngIf="!isStandalone" class=" vertical-align-center function-information">{{ appName | translate }} - {{ fnName | translate}}</div>
+        <div *ngIf="!inIFrame" class="left vertical-align-center">
+            <div *ngIf="!isStandalone" class=" function-information"><h4>{{ appName }} - {{ fnName }}</h4></div>
         </div>
 
         <div class="left vertical-align-center" [class.info-azure]="!isStandalone" [class.info-standalone]="isStandalone" [class.info-no-iframe]="!inIFrame">

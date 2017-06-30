@@ -31,67 +31,96 @@ import { FunctionInfo } from "app/shared/models/function-info";
 export class MainComponent implements AfterViewInit {
     public resourceId: string;
     public viewInfo: TreeViewInfo;
-    public dashboardType : string;
-    public inIFrame : boolean;
+    public dashboardType: string;
+    public inIFrame: boolean;
     public inTab = false;
-    public selectedFunction : FunctionInfo;
+    public selectedFunction: FunctionInfo;
     @ViewChild(BusyStateComponent) busyStateComponent: BusyStateComponent;
 
     @Input() tryFunctionApp: FunctionApp;
 
-    constructor(private _userService : UserService, private _globalStateService : GlobalStateService, private _cacheService : CacheService,
-                        _ngHttp : Http, _translateService : TranslateService, _broadcastService : BroadcastService, 
-                        _armService : ArmService, _languageService : LanguageService, _authZService : AuthzService,
-                        _configService : ConfigService, _slotsService : SlotsService, _aiService : AiService) {
+    constructor(private _userService: UserService, 
+                private _globalStateService: GlobalStateService, 
+                private _cacheService: CacheService,
+                _ngHttp: Http, 
+                _translateService: TranslateService, 
+                _broadcastService: BroadcastService, 
+                _armService: ArmService, 
+                _languageService: LanguageService,
+                _authZService: AuthzService,
+                _configService: ConfigService, 
+                _slotsService: SlotsService, 
+                _aiService: AiService) {
 
         this.inIFrame = _userService.inIFrame;
         this.inTab = _userService.inTab; // are we in a tab
 
-        if (this.inTab && this._userService.getStartupInfo() !== null) {
-            this._userService.getStartupInfo()
-            .subscribe(info =>{
-                // SiteDescriptor 
-                let siteDescriptor : SiteDescriptor = new SiteDescriptor(info.resourceId);
-
-                this._cacheService.getArm(siteDescriptor.getResourceId())
-                .subscribe(response =>{
-                    let site = <ArmObj<Site>>response.json();
-                    let functionApp : FunctionApp = new FunctionApp(site, 
-                                                                    _ngHttp, 
-                                                                    _userService, 
-                                                                    _globalStateService, 
-                                                                    _translateService, 
-                                                                    _broadcastService,
-                                                                    _armService, 
-                                                                    _cacheService, 
-                                                                    _languageService, 
-                                                                    _authZService, 
-                                                                    _aiService, 
-                                                                    _configService, 
-                                                                    _slotsService);
-                    functionApp.getFunctions()
-                    .subscribe(functions =>{
-                        console.log(info.resourceId);
-                        let fnDescriptor : FunctionDescriptor = new FunctionDescriptor(info.resourceId);
-                        let targetName : String = fnDescriptor.functionName
-
-                        // find the function that matches your resourceId
-                        for (var i = 0; i < functions.length; i++) {
-                            var fn = functions[i];
-                            if (fn.name == targetName){
-                                // Pass that function to the editor
-                                this.selectedFunction = fn;
-                                break;
-                            }
-                        }                        
-                    })
-                })
-            })
-
+        if (this.inTab) {
+            this.initializeChildWindow(_userService, 
+                                        _globalStateService,
+                                        _cacheService, 
+                                        _ngHttp,
+                                         _translateService, 
+                                        _broadcastService, 
+                                        _armService, 
+                                        _languageService, 
+                                        _authZService, 
+                                        _configService, 
+                                        _slotsService, 
+                                        _aiService);
         }
     }
 
-    updateViewInfo(viewInfo : TreeViewInfo){
+    initializeChildWindow(_userService: UserService, 
+                        _globalStateService: GlobalStateService, 
+                        _cacheService: CacheService,
+                        _ngHttp: Http, 
+                        _translateService: TranslateService, 
+                        _broadcastService: BroadcastService, 
+                        _armService: ArmService, 
+                        _languageService: LanguageService, 
+                        _authZService: AuthzService,
+                        _configService: ConfigService, 
+                        _slotsService: SlotsService, 
+                        _aiService: AiService) {
+        this._userService.getStartupInfo()
+        .subscribe(info =>{
+            // get list of functions from function app listed in resourceID
+            let siteDescriptor: SiteDescriptor = new SiteDescriptor(info.resourceId);
+
+            this._cacheService.getArm(siteDescriptor.getResourceId())
+            .mergeMap(response =>{
+                let site = <ArmObj<Site>>response.json();
+                let functionApp: FunctionApp = new FunctionApp(site, 
+                                                                _ngHttp, 
+                                                                _userService, 
+                                                                _globalStateService, 
+                                                                _translateService, 
+                                                                _broadcastService,
+                                                                _armService, 
+                                                                _cacheService, 
+                                                                _languageService,  
+                                                                _authZService, 
+                                                                _aiService, 
+                                                                _configService,  
+                                                                _slotsService);
+                return functionApp.getFunctions()
+            })
+            .subscribe(functions =>{
+                const fnDescriptor: FunctionDescriptor = new FunctionDescriptor(info.resourceId);
+                const targetName: string = fnDescriptor.functionName
+                const selectedFunction = functions.find(f => f.name === targetName);
+
+                if (selectedFunction !== undefined) {
+                    this.selectedFunction = selectedFunction;
+                } else {
+                // TODO: handle the error
+                }
+            })
+        })
+    }
+
+    updateViewInfo(viewInfo: TreeViewInfo){
         if(!viewInfo){
             this.viewInfo = viewInfo;
             return;

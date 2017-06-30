@@ -12,7 +12,6 @@ import { Url } from "app/shared/Utilities/url";
 })
 
 export class TreeViewComponent{
-    rID: string;
     node: TreeNode;
     paddingLeft : string;
     level : number;
@@ -31,10 +30,10 @@ export class TreeViewComponent{
         else{
             this.paddingLeft = "10px";
         }
-
         this.level = level;
     }
 
+<<<<<<< HEAD
     newTab() {
         //open a new tab with the rousource information
        this.rID = `${this.node.resourceId}` // .functionApp.site.id}/functions/${this.functionInfo.name}/files/${this.fileName}
@@ -46,4 +45,11 @@ export class TreeViewComponent{
         return (query == "tabbed");
     }
 
+=======
+    openNewTab() {
+        //open a new tab with the rousource information
+        let windowLocation : string = window.location.hostname;
+        window.open(`${windowLocation}/?tabbed=true&rid=${this.node.resourceId}`, '_blank');
+    }
+>>>>>>> 8457c3568ee6efbdef100d6dc06c10c254f4f4aa
 }

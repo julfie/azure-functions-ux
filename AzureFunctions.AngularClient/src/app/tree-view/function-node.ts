@@ -14,12 +14,13 @@ import {FunctionContainer} from '../shared/models/function-container';
 import {BroadcastEvent} from '../shared/models/broadcast-event';
 import {PortalResources} from '../shared/models/portal-resources';
 import {FunctionInfo} from '../shared/models/function-info';
+import { Url } from "app/shared/Utilities/url";
 
 export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposable, CustomSelection{
     public dashboardType = DashboardType.function;
     private _enabledTitle: string;
     private _disabledTitle: string;
-    public supportsTab: true;
+    public supportsTab: boolean;
 
     constructor(
         sideNav : SideNavComponent,
@@ -36,7 +37,9 @@ export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposa
         this._enabledTitle = this.functionInfo.name;
         this._disabledTitle = `(${disabledStr}) ${this.functionInfo.name}`;
 
-        this.supportsTab = true;
+        if (Url.getParameterByName(window.location.href, "appsvc.feature") === 'tabbed'){
+            this.supportsTab = true;
+        }
     }
 
     // This will be called on every change detection run. So I'm making sure to always

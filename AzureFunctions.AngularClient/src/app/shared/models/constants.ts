@@ -41,16 +41,20 @@ export class Constants {
     public static ReadOnlyMode = 'readOnly'.toLocaleLowerCase();
 }
 
-export type EnableTabFeature = 'tabs' | 'inplace' | null;
+export class TabCommunicationVerbs{
+    public static getStartInfo = "get-startup-info";
+    public static sentStartInfo = "startup-info";    
+}
 
 export class SiteTabIds{
-    public static readonly overview = "overview";
-    public static readonly monitor = "monitor";
-    public static readonly features = "platformFeatures";
-    public static readonly functionRuntime = "functionRuntimeSettings";
-    public static readonly apiDefinition = "apiDefinition";
-    public static readonly config = "config";
-    public static readonly  applicationSettings = "appSettings";
+    public static overview = "Overview";
+    public static monitor = "Monitor";
+    public static features = "Platform features";
+    public static functionRuntime = "Settings";
+    public static apiDefinition = "API Definition";
+    public static troubleshoot = "Troubleshoot";
+    public static deploymentSource = "Deployment Source";
+    public static config = "Config";
 }
 
 export class Arm{
@@ -83,10 +87,6 @@ export class Regex{
 
 export class Links{
     public static standaloneCreateLearnMore = "https://go.microsoft.com/fwlink/?linkid=848756";
-}
-
-export class LocalStorageKeys{
-    public static readonly siteTabs = "/site/tabs"
 }
 
 export class Order {

@@ -14,11 +14,11 @@ export interface QuickstartSettings extends StorageItem{
     disabled : boolean;
 }
 
-export class MessageLoad {
-    id : Guid;
-    verb : string;
-    data : any;
-}
 export interface TabSettings extends StorageItem{
     dynamicTabId : string;
 } 
+export interface MessageLoad {
+    id: string;
+    verb: string;
+    data: any;
+}

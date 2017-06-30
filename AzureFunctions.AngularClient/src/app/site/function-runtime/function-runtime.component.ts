@@ -1,5 +1,3 @@
-import { TabsComponent } from './../../tabs/tabs.component';
-import { BusyStateComponent } from './../../busy-state/busy-state.component';
 import { EditModeHelper } from './../../shared/Utilities/edit-mode.helper';
 import { Component, Input, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { Response } from '@angular/http';
@@ -78,7 +76,6 @@ export class FunctionRuntimeComponent implements OnDestroy {
   public slotsEnabled: boolean;
   private slotsValueChange: Subject<boolean>;
   private _numSlots: number = 0;
-  private _busyState : BusyStateComponent;
 
   constructor(
     private _armService: ArmService,
@@ -89,17 +86,14 @@ export class FunctionRuntimeComponent implements OnDestroy {
     private _globalStateService: GlobalStateService,
     private _aiService: AiService,
     private _translateService: TranslateService,
-    private _slotsService: SlotsService,
-    tabsComponent : TabsComponent
+    private _slotsService: SlotsService
   ) {
-
-    this._busyState = tabsComponent.busyState;
 
     this.showTryView = this._globalStateService.showTryView;
     this._viewInfoSub = this._viewInfoStream
       .switchMap(viewInfo => {
         this._viewInfo = viewInfo;
-        this._busyState.setBusyState();
+        this._globalStateService.setBusyState();
 
         this._appNode = (<AppNode>viewInfo.node);
 
@@ -173,7 +167,7 @@ export class FunctionRuntimeComponent implements OnDestroy {
             } else {
                 this.functionAppEditMode = true;
             }
-            this._busyState.clearBusyState();
+            this._globalStateService.clearBusyState();
             let traceKey = this._viewInfo.data.siteTraceKey;
             this._aiService.stopTrace('/site/function-runtime-tab-ready', traceKey);
 
@@ -216,7 +210,7 @@ export class FunctionRuntimeComponent implements OnDestroy {
     this.proxySettingValueStream = new Subject<boolean>();
     this.proxySettingValueStream
       .subscribe((value: boolean) => {
-        this._busyState.setBusyState();
+        this._globalStateService.setBusyState();
         let appSettingValue: string = value ? Constants.routingExtensionVersion : Constants.disabled;
 
         this._cacheService.postArm(`${this.site.id}/config/appsettings/list`, true)
@@ -228,7 +222,7 @@ export class FunctionRuntimeComponent implements OnDestroy {
             this.apiProxiesEnabled = value;
             this.needUpdateRoutingExtensionVersion = false;
             this.routingExtensionVersion = Constants.routingExtensionVersion;
-            this._busyState.clearBusyState();
+            this._globalStateService.clearBusyState();
             this._cacheService.clearArmIdCachePrefix(this.site.id);
           });
       });
@@ -237,7 +231,7 @@ export class FunctionRuntimeComponent implements OnDestroy {
     this.functionEditModeValueStream
       .switchMap(state => {
         let originalState = this.functionAppEditMode;
-        this._busyState.setBusyState();
+        this._globalStateService.setBusyState();
         this.functionAppEditMode = state;
         let appSetting = this.functionAppEditMode ? Constants.ReadWriteMode : Constants.ReadOnlyMode;
         return this._cacheService.postArm(`${this.site.id}/config/appsettings/list`, true)
@@ -250,7 +244,7 @@ export class FunctionRuntimeComponent implements OnDestroy {
       })
       .do(null, originalState => {
         this.functionAppEditMode = originalState;
-        this._busyState.clearBusyState();
+        this._globalStateService.clearBusyState();
         this._broadcastService.broadcast<ErrorEvent>(BroadcastEvent.Error, {
           message: this._translateService.instant(PortalResources.error_unableToUpdateFunctionAppEditMode),
           errorType: ErrorType.ApiError,
@@ -263,26 +257,26 @@ export class FunctionRuntimeComponent implements OnDestroy {
       // getFunctionAppEditMode returns a subject and updates it on demand.
       .mergeMap(_ => this.functionApp.getFunctionAppEditMode())
       .subscribe(fi => {
-        this._busyState.clearBusyState();
+        this._globalStateService.clearBusyState();
       });
 
     this.slotsValueChange = new Subject<boolean>();
     this.slotsValueChange.subscribe((value: boolean) => {
-      this._busyState.setBusyState();
+      this._globalStateService.setBusyState();
       let slotsSettingsValue: string = value ? Constants.slotsSecretStorageSettingsValue : Constants.disabled;
       this._cacheService.postArm(`${this.site.id}/config/appsettings/list`, true)
         .mergeMap(r => {
           return this._slotsService.setStatusOfSlotOptIn(this.site, r.json(), slotsSettingsValue);
         })
         .do(null, e => {
-          this._busyState.clearBusyState();
+          this._globalStateService.clearBusyState();
           this._aiService.trackException(e, 'function-runtime')
         })
         .retry()
         .subscribe(r => {
           this.functionApp.fireSyncTrigger();
           this.slotsEnabled = value;
-          this._busyState.clearBusyState();
+          this._globalStateService.clearBusyState();
           this._cacheService.clearArmIdCachePrefix(this.site.id);
         });
     });
@@ -308,9 +302,9 @@ export class FunctionRuntimeComponent implements OnDestroy {
   }
 
   saveMemorySize(value: string | number) {
-    this._busyState.setBusyState();
+    this._globalStateService.setBusyState();
     this._updateMemorySize(this.site, value)
-      .subscribe(r => { this._busyState.clearBusyState(); Object.assign(this.site, r); this.dirty = false; });
+      .subscribe(r => { this._globalStateService.clearBusyState(); Object.assign(this.site, r); this.dirty = false; });
   }
 
   isIE(): boolean {
@@ -319,14 +313,14 @@ export class FunctionRuntimeComponent implements OnDestroy {
 
   updateVersion() {
     this._aiService.trackEvent('/actions/app_settings/update_version');
-    this._busyState.setBusyState();
+    this._globalStateService.setBusyState();
     this._cacheService.postArm(`${this.site.id}/config/appsettings/list`, true)
       .mergeMap(r => {
         return this._updateContainerVersion(this.site, r.json());
       })
       .subscribe(r => {
         this.needUpdateExtensionVersion = false;
-        this._busyState.clearBusyState();
+        this._globalStateService.clearBusyState();
         this._cacheService.clearArmIdCachePrefix(this.site.id);
         this._appNode.clearNotification(NotificationIds.newRuntimeVersion);
       });
@@ -334,7 +328,7 @@ export class FunctionRuntimeComponent implements OnDestroy {
 
   updateRoutingExtensionVersion() {
     this._aiService.trackEvent('/actions/app_settings/update_routing_version');
-    this._busyState.setBusyState();
+    this._globalStateService.setBusyState();
 
     this._cacheService.postArm(`${this.site.id}/config/appsettings/list`, true)
       .mergeMap(r => {
@@ -342,7 +336,7 @@ export class FunctionRuntimeComponent implements OnDestroy {
       })
       .subscribe(r => {
         this.needUpdateRoutingExtensionVersion = false;
-        this._busyState.clearBusyState();
+        this._globalStateService.clearBusyState();
         this._cacheService.clearArmIdCachePrefix(this.site.id);
       });
   }
@@ -353,28 +347,28 @@ export class FunctionRuntimeComponent implements OnDestroy {
           let dailyMemoryTimeQuota = +this.dailyMemoryTimeQuota;
 
           if (dailyMemoryTimeQuota > 0) {
-              this._busyState.setBusyState();
+              this._globalStateService.setBusyState();
               this._updateDailyMemory(this.site, dailyMemoryTimeQuota).subscribe((r) => {
                   var site = r.json();
                   this.showDailyMemoryWarning = (!site.properties.enabled && site.properties.siteDisabledReason === 1);
                   this.showDailyMemoryInfo = true;
                   this.site.properties.dailyMemoryTimeQuota = dailyMemoryTimeQuota;
                   this.dailyMemoryTimeQuotaOriginal = this.dailyMemoryTimeQuota;
-                  this._busyState.clearBusyState();
+                  this._globalStateService.clearBusyState();
               });
           }
       }
   }
 
   removeQuota() {
-    this._busyState.setBusyState();
+    this._globalStateService.setBusyState();
     this._updateDailyMemory(this.site, 0).subscribe(() => {
       this.showDailyMemoryInfo = false;
       this.showDailyMemoryWarning = false;
       this.dailyMemoryTimeQuota = '';
       this.dailyMemoryTimeQuotaOriginal = this.dailyMemoryTimeQuota;
       this.site.properties.dailyMemoryTimeQuota = 0;
-      this._busyState.clearBusyState();
+      this._globalStateService.clearBusyState();
     });
   }
 

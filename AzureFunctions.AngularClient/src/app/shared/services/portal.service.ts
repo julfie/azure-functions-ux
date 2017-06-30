@@ -13,36 +13,33 @@ import {UserService} from './user.service';
 import {AiService} from './ai.service';
 import {SetupOAuthRequest, SetupOAuthResponse} from '../../site/deployment-source/deployment';
 import {LocalStorageService} from './local-storage.service';
-import { SiteDescriptor } from "app/shared/resourceDescriptors";
-// import { MessageLoad } from "app/shared/models/localStorage/local-storage";
-import { Guid } from "app/shared/Utilities/Guid";
-
-class MessageLoad {
-    id : Guid;
-    verb : string;
-    data : any;
-}
+import { SiteDescriptor } from "../resourceDescriptors";
+import { Guid } from "../Utilities/Guid";
+import { TabCommunicationVerbs } from "../models/constants";
+import { MessageLoad } from "app/shared/models/localStorage/local-storage";
 
 @Injectable()
 export class PortalService {
-    public guidId: Guid = null;
+    public tabId: string | null;
+    public iFrameId: string | null;
     public sessionId = "";
 
     public startupDict : Map<Guid,StartupInfo> = new Map<Guid,StartupInfo>();
 
     private portalSignature: string = "FxAppBlade";
     private startupInfo: StartupInfo = null;
-    private startupInfoObservable : ReplaySubject<StartupInfo>;
-    private setupOAuthObservable : Subject<SetupOAuthResponse>;
-    private getAppSettingCallback : (appSettingName: string) => void;
+    private startupInfoObservable: ReplaySubject<StartupInfo>;
+    private setupOAuthObservable: Subject<SetupOAuthResponse>;
+    private getAppSettingCallback: (appSettingName: string) => void;
     private shellSrc: string;
-    private notificationStartStream : Subject<NotificationStartedInfo>;
-    private localStorage : Storage;
+    private notificationStartStream: Subject<NotificationStartedInfo>;
+    private localStorage: Storage;
 
-    public resourceId : string;
+    public resourceId: string;
 
-    constructor(private _broadcastService : BroadcastService,
-                private _aiService : AiService) {
+    constructor(private _broadcastService: BroadcastService,
+                private _aiService: AiService,
+                private _storageService : LocalStorageService) {
 
         this.startupInfoObservable = new ReplaySubject<StartupInfo>(1);
         this.setupOAuthObservable = new Subject<SetupOAuthResponse>();
@@ -52,7 +49,7 @@ export class PortalService {
         if (PortalService.inIFrame()){
             this.initializeIframe();
         }
-        if(PortalService.inTab()){
+        else if (PortalService.inTab()){
             this.initializeTab();
         }
     }
@@ -61,12 +58,19 @@ export class PortalService {
         return this.startupInfoObservable;
     }
 
-    setupOAuth(input : SetupOAuthRequest){
+    setupOAuth(input: SetupOAuthRequest){
         this.postMessage(Verbs.setupOAuth, JSON.stringify(input));
         return this.setupOAuthObservable;
     }
 
-    initializeIframe(): void {
+    private initializeIframe(): void {
+
+        this.iFrameId = Guid.newShortGuid();
+
+        // listener for localstorage events from any child tabs of the window
+        // window.addEventListener("storage", this.recieveStorageMessage.bind(this));
+        // this._storageService.addEventListener(this.recieveStorageMessage, this);
+        this._storageService.addEventListener(this.recieveStorageMessage);
 
         window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
 
@@ -75,8 +79,8 @@ export class PortalService {
         window.addEventListener(Verbs.message, this.iframeReceivedMsg.bind(this), false);
 
         let appsvc = window.appsvc;
-        let getStartupInfoObj : GetStartupInfo = {
-            iframeHostName : appsvc && appsvc.env && appsvc.env.hostName ? appsvc.env.hostName : null
+        let getStartupInfoObj: GetStartupInfo = {
+            iframeHostName: appsvc && appsvc.env && appsvc.env.hostName ? appsvc.env.hostName: null
         };
 
         // This is a required message. It tells the shell that your iframe is ready to receive messages.
@@ -90,22 +94,23 @@ export class PortalService {
         });
     }
 
-    initializeTab(): void {
+    private initializeTab(): void {
 
-        //listener to localStorage
-        window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
+        // listener to localStorage
+        // window.addEventListener("storage", this.recieveStorageMessage.bind(this));
+        this._storageService.addEventListener(this.recieveStorageMessage);
 
-        if (PortalService.inTab() && this.guidId == null) {
+        if (PortalService.inTab() && !this.tabId) {
             // create own id and set
-            this.guidId = Guid.newTinyGuid();
+            this.tabId = Guid.newTinyGuid();
             //send id back to parent
-           this.returnMessage(this.guidId, "get-startup-info", null);
+           this.returnMessage(this.tabId, TabCommunicationVerbs.getStartInfo, null);
         }
     }
 
-    recieveStorageMessage(item : StorageEvent){
+    private recieveStorageMessage(item: StorageEvent){
 
-        let msg : MessageLoad = JSON.parse(item.newValue);
+        let msg: MessageLoad = JSON.parse(item.newValue);
 
         if(!msg){
             return;
@@ -114,49 +119,50 @@ export class PortalService {
         console.log(item);
         if(PortalService.inIFrame() && !PortalService.inTab()){
             // if parent recieved new id call
-            if (item.key == "get-startup-info") {
-                let id : Guid = msg.id;
+            const key: string = item.key.split(":")[0];
+            if (key === `${TabCommunicationVerbs.getStartInfo}`) {
+                let id: string = msg.id;
                 //send over startupinfo
                 this.getStartupInfo()
                 .take(1)
                 .subscribe(info =>{
-                    let startup : StartupInfo = JSON.parse(JSON.stringify(info));
+                    let startup: StartupInfo = JSON.parse(JSON.stringify(info));
                     startup.resourceId = "";
-                    this.returnMessage(id, "startup-info", startup);
+                    this.returnMessage(id, TabCommunicationVerbs.sentStartInfo, startup);
                 })
             }
         }
 
         else if(PortalService.inTab()){
             //if the startup message is meant for the child tab
-            if (msg.id == this.guidId && item.key == "startup-info") {
+            if (msg.id === this.tabId && item.key === `${TabCommunicationVerbs.sentStartInfo}:${this.tabId}`) {
                 // get new startup info and update
-                let startupInfo : StartupInfo = msg.data;
-                startupInfo.resourceId = window.location.href.split("&")[1];
+                let startupInfo: StartupInfo = msg.data;
+                startupInfo.resourceId = Url.getParameterByName(null, "rid");
                 this.startupInfoObservable.next(startupInfo);
             }
         }
 
     }
 
-    private returnMessage(id : Guid, verb : string, data : any) {
+    private returnMessage(id: string, verb: string, data: any) {
         // return the ready message with guid
-        let returnMessage : MessageLoad = new MessageLoad();
+        let returnMessage: MessageLoad;
         returnMessage.id = id;
         returnMessage.verb = verb;
         returnMessage.data = data;
 
         // send and then remove
-        window.localStorage.setItem(verb, JSON.stringify(returnMessage));
-        window.localStorage.removeItem(verb);
-    }
+        // include the id in the key so that douplicate messages from different windows can not remove another
+        this._storageService.setItem(`${verb}:${id}`, returnMessage);
+        this._storageService.removeItem(`${verb}:${id}`);    }
 
-    openBlade(bladeInfo : OpenBladeInfo, source : string){
+    openBlade(bladeInfo: OpenBladeInfo, source: string){
         this.logAction(source, 'open-blade ' + bladeInfo.detailBlade);
         this._aiService.trackEvent('/site/open-blade', {
-            targetBlade : bladeInfo.detailBlade,
-            targetExtension : bladeInfo.extension,
-            source : source
+            targetBlade: bladeInfo.detailBlade,
+            targetExtension: bladeInfo.extension,
+            source: source
         });
 
         this.postMessage(Verbs.openBlade, JSON.stringify(bladeInfo));
@@ -165,32 +171,32 @@ export class PortalService {
     openCollectorBlade(resourceId: string, name: string, source: string, getAppSettingCallback: (appSettingName: string) => void): void {
         this.logAction(source, "open-blade-collector" + name, null);
         this._aiService.trackEvent('/site/open-collector-blade', {
-            targetBlade : name,
-            source : source
+            targetBlade: name,
+            source: source
         });
 
         this.getAppSettingCallback = getAppSettingCallback;
         let payload = {
-            resourceId : resourceId,
-            bladeName : name
+            resourceId: resourceId,
+            bladeName: name
         };
 
         this.postMessage(Verbs.openBladeCollector, JSON.stringify(payload));
     }
 
-    openCollectorBladeWithInputs(resourceId : string, obj : any, source: string, getAppSettingCallback: (appSettingName: string) => void): void {
+    openCollectorBladeWithInputs(resourceId: string, obj: any, source: string, getAppSettingCallback: (appSettingName: string) => void): void {
         this.logAction(source, "open-blade-collector-inputs" + obj.bladeName, null);
 
         this._aiService.trackEvent('/site/open-collector-blade', {
-            targetBlade : obj.bladeName,
-            source : source
+            targetBlade: obj.bladeName,
+            source: source
         });
 
         this.getAppSettingCallback = getAppSettingCallback;
 
         let payload = {
-            resourceId : resourceId,
-            input : obj
+            resourceId: resourceId,
+            input: obj
         };
 
         this.postMessage(Verbs.openBladeCollectorInputs, JSON.stringify(payload));
@@ -200,49 +206,49 @@ export class PortalService {
         this.postMessage(Verbs.closeBlades, "");
     }
 
-    updateBladeInfo(title : string, subtitle : string){
-        let payload : UpdateBladeInfo = {
-            title : title,
-            subtitle : subtitle
+    updateBladeInfo(title: string, subtitle: string){
+        let payload: UpdateBladeInfo = {
+            title: title,
+            subtitle: subtitle
         };
 
         this.postMessage(Verbs.updateBladeInfo, JSON.stringify(payload));
     }
 
-    pinPart(pinPartInfo : PinPartInfo){
+    pinPart(pinPartInfo: PinPartInfo){
         this.postMessage(Verbs.pinPart, JSON.stringify(pinPartInfo));
     }
 
-    startNotification(title : string, description : string){
+    startNotification(title: string, description: string){
         if(PortalService.inIFrame()){
-            let payload : NotificationInfo = {
-                state : "start",
-                title : title,
-                description : description
+            let payload: NotificationInfo = {
+                state: "start",
+                title: title,
+                description: description
             };
 
             this.postMessage(Verbs.setNotification, JSON.stringify(payload));
         }
         else{
             setTimeout(() =>{
-                this.notificationStartStream.next({ id : "id" });
+                this.notificationStartStream.next({ id: "id" });
             });
         }
 
         return this.notificationStartStream;
     }
 
-    stopNotification(id : string, success : boolean, description : string){
+    stopNotification(id: string, success: boolean, description: string){
         let state = "success";
         if(!success){
             state = "fail";
         }
 
-        let payload : NotificationInfo = {
-            id : id,
-            state : state,
-            title : null,
-            description : description
+        let payload: NotificationInfo = {
+            id: id,
+            state: state,
+            title: null,
+            description: description
         };
 
         this.postMessage(Verbs.setNotification, JSON.stringify(payload));
@@ -258,15 +264,15 @@ export class PortalService {
         this.postMessage(Verbs.logAction, actionStr);
     }
 
-    setDirtyState(dirty : boolean) : void{
+    setDirtyState(dirty: boolean): void{
         this.postMessage(Verbs.setDirtyState, JSON.stringify(dirty));
     }
 
-    logMessage(level : LogEntryLevel, message : string, ...restArgs: any[]){
+    logMessage(level: LogEntryLevel, message: string, ...restArgs: any[]){
         let messageStr = JSON.stringify(<Message>{
-            level : level,
-            message : message,
-            restArgs : restArgs
+            level: level,
+            message: message,
+            restArgs: restArgs
         });
 
         this.postMessage(Verbs.logMessage, messageStr);
@@ -314,18 +320,23 @@ export class PortalService {
     private postMessage(verb: string, data: string){
         if(PortalService.inIFrame()){
             window.parent.postMessage(<Data>{
-                signature : this.portalSignature,
+                signature: this.portalSignature,
                 kind: verb,
                 data: data
             }, this.shellSrc);
         }
     }
 
-    public static inIFrame() : boolean{
+    public static inIFrame(): boolean{
         return window.parent !== window && window.location.pathname !== "/context.html";
     }
 
+<<<<<<< HEAD
     public static inTab() : boolean{
         return window.location.href.indexOf("tabbed=true") > -1 || window.top == window.self;
+=======
+    public static inTab(): boolean{
+        return (Url.getParameterByName(null, "tabbed") === 'true');
+>>>>>>> 8457c3568ee6efbdef100d6dc06c10c254f4f4aa
     }
 }
