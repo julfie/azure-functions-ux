@@ -2,7 +2,6 @@ import { GlobalStateService } from './../shared/services/global-state.service';
 import {Component, OnInit, EventEmitter, Input, Output} from '@angular/core';
 import {ArmService} from '../shared/services/arm.service';
 import {TreeNode} from './tree-node';
-import { Url } from "app/shared/Utilities/url";
 
 @Component({
     selector: 'tree-view',
@@ -12,7 +11,6 @@ import { Url } from "app/shared/Utilities/url";
 })
 
 export class TreeViewComponent{
-    rID: string;
     node: TreeNode;
     paddingLeft : string;
     level : number;
@@ -31,19 +29,12 @@ export class TreeViewComponent{
         else{
             this.paddingLeft = "10px";
         }
-
         this.level = level;
     }
 
-    newTab() {
+    openNewTab() {
         //open a new tab with the rousource information
-       this.rID = `${this.node.resourceId}` // .functionApp.site.id}/functions/${this.functionInfo.name}/files/${this.fileName}
-       window.open(`https://localhost:44300/?tabbed=true&${this.rID}`, '_blank');
+        let windowLocation : string = window.location.hostname;
+        window.open(`${windowLocation}/?tabbed=true&rid=${this.node.resourceId}`, '_blank');
     }
-
-    urlTabQuery(): boolean {
-        let query = Url.getParameterByName(window.location.href, "appsvc.feature");
-        return (query == "tabbed");
-    }
-
 }

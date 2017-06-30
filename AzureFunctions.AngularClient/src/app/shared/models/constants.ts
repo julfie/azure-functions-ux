@@ -41,6 +41,11 @@ export class Constants {
     public static ReadOnlyMode = 'readOnly'.toLocaleLowerCase();
 }
 
+export class TabCommunicationVerbs{
+    public static getStartInfo = "get-startup-info";
+    public static sentStartInfo = "startup-info";    
+}
+
 export class SiteTabIds{
     public static overview = "Overview";
     public static monitor = "Monitor";

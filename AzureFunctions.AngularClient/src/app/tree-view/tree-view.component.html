@@ -50,9 +50,9 @@
         (click)="node.scopeToNode()"
         title="Scope to this app"></i>
 
-      <i *ngIf="node.supportsTab && urlTabQuery()"
+      <i *ngIf="node.supportsTab"
         class="fa fa-external-link"
-        (click)="newTab()"
+        (click)="openNewTab()"
         title="Open in new tab"></i>
     </span>
   </span>

@@ -1,58 +1,69 @@
-import { PortalService } from './portal.service';
-import {LogEntryLevel} from '../models/portal';
-import {Injectable, EventEmitter} from '@angular/core';
-import {StorageItem} from '../models/localStorage/local-storage';
-import {EnabledFeature, Feature} from '../models/localStorage/enabled-features';
+import { LogEntryLevel } from '../models/portal';
+import { Injectable, EventEmitter } from '@angular/core';
+import { StorageItem } from '../models/localStorage/local-storage';
+import { EnabledFeature, Feature } from '../models/localStorage/enabled-features';
+import { AiService } from "app/shared/services/ai.service";
 
 @Injectable()
 export class LocalStorageService {
     private _apiVersion = "2017-02-01";
     private _apiVersionKey = "appsvc-api-version";
 
-    constructor(private _portalService : PortalService){
+    constructor(private _aiService: AiService) {
         let apiVersion = localStorage.getItem(this._apiVersionKey);
-        if(!apiVersion || apiVersion !== this._apiVersion){
+        if (!apiVersion || apiVersion !== this._apiVersion) {
             this._resetStorage();
         }
     }
 
-    getItem(key : string) : StorageItem{
+    getItem(key: string): StorageItem {
         return JSON.parse(localStorage.getItem(key));
     }
 
-    setItem(key : string, item : StorageItem){
-        try{
+    setItem(key: string, item: StorageItem) {
+        try {
             localStorage.setItem(key, JSON.stringify(item));
         }
-        catch(e){
-            this._portalService.logMessage(LogEntryLevel.Debug, `Clearing local storage with ${localStorage.length} items.  ${e}`);
+        catch (e) {
+            this._aiService.trackEvent(
+                '/storage-service/error', {
+                    error: `Clearing local storage with ${localStorage.length} items.  ${e}`
+                });
 
             this._resetStorage();
 
-            try{
+            try {
                 localStorage.setItem(key, JSON.stringify(item));
             }
-            catch(e2){
-                this._portalService.logMessage(LogEntryLevel.Error, "Failed to save to local storage on 2nd attempt. ${e2}");
+            catch (e2) {
+                this._aiService.trackEvent(
+                    '/storage-service/error', {
+                        error: `Failed to save to local storage on 2nd attempt. ${e2}`
+                    });
             }
         }
     }
 
-    storageHandler(message) : void {
-        if (message.key!='message') return;
-        let m = this.getItem("message");
-        var msg = JSON.stringify(m);
-
-        //set action based on received message
-        if (msg == "startup") {
-            //send message back with startup information
-            //and information on which fn to have openS
+    removeItem(key: string) {
+        try {
+            localStorage.removeItem(key);
         }
-
+        catch (e) {
+            this._aiService.trackEvent(
+                '/storage-service/error', {
+                    error: `Failed to remove from local storage.  ${e}`
+                });
+        }
     }
 
-    private _resetStorage(){
+    // public addEventListener(handler: (StorageEvent) => void, caller : any) {
+    public addEventListener(handler: (StorageEvent) => void) {
+        // window.addEventListener("storage", handler.bind(caller));
+        window.addEventListener("storage", (event) => { handler(event); }, false);
+    }
+
+    private _resetStorage() {
         localStorage.clear();
-        localStorage.setItem(this._apiVersionKey, this._apiVersion);            
+        localStorage.setItem(this._apiVersionKey, this._apiVersion);
     }
 }

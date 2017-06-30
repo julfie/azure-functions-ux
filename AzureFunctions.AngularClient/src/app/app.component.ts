@@ -65,7 +65,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     ngOnInit() {
         this._userService.getStartupInfo()
-        // .first()
+        .first()
         .subscribe(info => {
             this._startupInfo = info;
             this.ready = true;
