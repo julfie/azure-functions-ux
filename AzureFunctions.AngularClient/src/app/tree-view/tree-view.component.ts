@@ -35,7 +35,12 @@ export class TreeViewComponent{
 
     openNewTab() {
         //open a new tab with the rousource information
-        let windowLocation : string = window.location.hostname;
-        window.open(`${windowLocation}/?tabbed=true&rid=${this.node.resourceId}`, '_blank');
+        let windowLocation : string = `${window.location.hostname}`;
+        if (window.location.port) {
+            windowLocation += `:${window.location.port}`
+        }
+        window.open(`https://${windowLocation}/?tabbed=true&rid=${this.node.resourceId}`, '_blank');
+        // window.open(`https://localhost:44300/?tabbed=true&rid=${this.node.resourceId}`, '_blank');
+        
     }
 }

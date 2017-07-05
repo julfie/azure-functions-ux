@@ -33,7 +33,7 @@ export class MainComponent implements AfterViewInit {
     public viewInfo: TreeViewInfo;
     public dashboardType: string;
     public inIFrame: boolean;
-    public inTab = false;
+    public inTab : boolean;
     public selectedFunction: FunctionInfo;
     @ViewChild(BusyStateComponent) busyStateComponent: BusyStateComponent;
 

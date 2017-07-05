@@ -166,7 +166,7 @@ export class SideNavComponent implements AfterViewInit {
         .subscribe(functions =>{
             this.globalStateService.clearBusyState();
 
-            let functionInfo : FunctionInfo = null;
+            let functionInfo : FunctionInfo | null;
             if(functions && functions.length > 0){
                 this.initialResourceId = `${this.tryFunctionApp.site.id}/functions/${functions[0].name}`;
             }

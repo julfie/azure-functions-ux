@@ -16,7 +16,7 @@ import {LocalStorageService} from './local-storage.service';
 import { SiteDescriptor } from "../resourceDescriptors";
 import { Guid } from "../Utilities/Guid";
 import { TabCommunicationVerbs } from "../models/constants";
-import { MessageLoad } from "app/shared/models/localStorage/local-storage";
+import { TabMessage } from "app/shared/models/localStorage/local-storage";
 
 @Injectable()
 export class PortalService {
@@ -27,7 +27,7 @@ export class PortalService {
     public startupDict : Map<Guid,StartupInfo> = new Map<Guid,StartupInfo>();
 
     private portalSignature: string = "FxAppBlade";
-    private startupInfo: StartupInfo = null;
+    private startupInfo: StartupInfo | null;
     private startupInfoObservable: ReplaySubject<StartupInfo>;
     private setupOAuthObservable: Subject<SetupOAuthResponse>;
     private getAppSettingCallback: (appSettingName: string) => void;
@@ -70,7 +70,7 @@ export class PortalService {
         // listener for localstorage events from any child tabs of the window
         // window.addEventListener("storage", this.recieveStorageMessage.bind(this));
         // this._storageService.addEventListener(this.recieveStorageMessage, this);
-        this._storageService.addEventListener(this.recieveStorageMessage);
+        this._storageService.addEventListener(this.recieveStorageMessage, this);
 
         window.addEventListener("storage", this.recieveStorageMessage.bind(this) , false);
 
@@ -98,7 +98,7 @@ export class PortalService {
 
         // listener to localStorage
         // window.addEventListener("storage", this.recieveStorageMessage.bind(this));
-        this._storageService.addEventListener(this.recieveStorageMessage);
+        this._storageService.addEventListener(this.recieveStorageMessage, this);
 
         if (PortalService.inTab() && !this.tabId) {
             // create own id and set
@@ -110,13 +110,14 @@ export class PortalService {
 
     private recieveStorageMessage(item: StorageEvent){
 
-        let msg: MessageLoad = JSON.parse(item.newValue);
+        let msg: TabMessage = JSON.parse(item.newValue);
 
         if(!msg){
             return;
         }
 
-        console.log(item);
+        if (PortalService.debugging()) {console.log(item);}
+
         if(PortalService.inIFrame() && !PortalService.inTab()){
             // if parent recieved new id call
             const key: string = item.key.split(":")[0];
@@ -126,8 +127,7 @@ export class PortalService {
                 this.getStartupInfo()
                 .take(1)
                 .subscribe(info =>{
-                    let startup: StartupInfo = JSON.parse(JSON.stringify(info));
-                    startup.resourceId = "";
+                    const startup: StartupInfo = Object.assign({}, info, {resourceId: ''});
                     this.returnMessage(id, TabCommunicationVerbs.sentStartInfo, startup);
                 })
             }
@@ -147,10 +147,11 @@ export class PortalService {
 
     private returnMessage(id: string, verb: string, data: any) {
         // return the ready message with guid
-        let returnMessage: MessageLoad;
-        returnMessage.id = id;
-        returnMessage.verb = verb;
-        returnMessage.data = data;
+        let returnMessage: TabMessage = {
+            id : id,
+            verb : verb,
+            data : data
+        };;
 
         // send and then remove
         // include the id in the key so that douplicate messages from different windows can not remove another
@@ -331,7 +332,18 @@ export class PortalService {
         return window.parent !== window && window.location.pathname !== "/context.html";
     }
 
+    // does not check for window heirarchy to make sure s
     public static inTab(): boolean{
         return (Url.getParameterByName(null, "tabbed") === 'true');
+    }
+
+    // if console logs should be printed
+    public static debugging(): boolean{
+        return (Url.getParameterByName(null, "debug") === 'true');
+    }
+
+    // what feature is being looked at currently
+    public static feature(): string{
+        return (Url.getParameterByName(null, "feature"));
     }
 }

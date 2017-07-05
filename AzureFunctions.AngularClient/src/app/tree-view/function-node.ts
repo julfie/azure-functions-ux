@@ -37,9 +37,7 @@ export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposa
         this._enabledTitle = this.functionInfo.name;
         this._disabledTitle = `(${disabledStr}) ${this.functionInfo.name}`;
 
-        if (Url.getParameterByName(window.location.href, "appsvc.feature") === 'tabbed'){
-            this.supportsTab = true;
-        }
+        this.supportsTab = (Url.getParameterByName(window.location.href, "appsvc.feature") === 'tabbed');
     }
 
     // This will be called on every change detection run. So I'm making sure to always

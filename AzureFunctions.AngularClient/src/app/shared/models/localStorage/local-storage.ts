@@ -17,7 +17,7 @@ export interface QuickstartSettings extends StorageItem{
 export interface TabSettings extends StorageItem{
     dynamicTabId : string;
 } 
-export interface MessageLoad {
+export interface TabMessage extends StorageItem{
     id: string;
     verb: string;
     data: any;

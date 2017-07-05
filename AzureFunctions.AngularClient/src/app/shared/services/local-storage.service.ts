@@ -56,10 +56,8 @@ export class LocalStorageService {
         }
     }
 
-    // public addEventListener(handler: (StorageEvent) => void, caller : any) {
-    public addEventListener(handler: (StorageEvent) => void) {
-        // window.addEventListener("storage", handler.bind(caller));
-        window.addEventListener("storage", (event) => { handler(event); }, false);
+    public addEventListener(handler: (StorageEvent) => void, caller : any) {
+        window.addEventListener("storage", handler.bind(caller));
     }
 
     private _resetStorage() {
