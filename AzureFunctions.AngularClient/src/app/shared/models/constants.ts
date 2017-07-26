@@ -45,8 +45,9 @@ export class TabCommunicationVerbs {
     public static getStartInfo = "get-startup-info";
     public static sentStartInfo = "startup-info";
     public static updatedFile = "updated-file-notice"
-    public static newToken = "new-token";
     public static parentClosed = "parent-window-closed";
+    public static lockEditor = "lock-monaco-editor";
+    public static getUpdatedContent = "get-most-updated-content"
 }
 
 

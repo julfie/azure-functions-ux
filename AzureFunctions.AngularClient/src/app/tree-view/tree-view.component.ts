@@ -132,12 +132,15 @@ export class TreeViewComponent implements OnChanges, AfterContentInit {
         node.isFocused = false;
     }
 
-    openNewTab() {
+    openNewTab(event: any) {
         //open a new tab with the rousource information
         let windowLocation : string = `${window.location.hostname}`;
         if (window.location.port) {
             windowLocation += `:${window.location.port}`
         }
         window.open(`https://${windowLocation}/signin?tabbed=true&rid=${this.node.resourceId}`, '_blank');
+
+        // keeping clicking the 'new tab' button from also opening the function in the portal
+        event.stopPropagation();
     }
 }

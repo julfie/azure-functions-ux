@@ -17,15 +17,15 @@ import { SiteDescriptor, FunctionDescriptor } from "../resourceDescriptors";
 import { Guid } from "../Utilities/Guid";
 import { TabCommunicationVerbs } from "../models/constants";
 import { FunctionApp } from "app/shared/function-app";
-import { TabMessage } from "app/shared/models/localStorage/local-storage";
+import { TabMessage, contentUpdateMessage } from "app/shared/models/localStorage/local-storage";
 import { Logger } from "app/shared/utilities/logger";
 
 @Injectable()
 export class PortalService {
-    public tabId: string | null;
-    public iFrameId: string | null;
+    public windowId: string | null;
 
     public sessionId = "";
+    public fileResourceId = "";
 
     private portalSignature: string = "FxAppBlade";
     private startupInfo: StartupInfo | null;
@@ -35,8 +35,11 @@ export class PortalService {
     private shellSrc: string;
     private notificationStartStream: Subject<NotificationStartedInfo>;
     private localStorage: Storage;
-
-    public resourceId: string;
+    public recievedUpdatedFunctionContent: Subject<string>;
+    public sentUpdatedFunctionContent: Subject<contentUpdateMessage>;
+    public monacoDisabled: Subject<boolean>;
+    public monacoDirtyState: boolean;
+    public mostRecentContent: contentUpdateMessage;
 
     constructor(private _broadcastService: BroadcastService,
         private _aiService: AiService,
@@ -45,6 +48,25 @@ export class PortalService {
         this.startupInfoObservable = new ReplaySubject<StartupInfo>(1);
         this.setupOAuthObservable = new Subject<SetupOAuthResponse>();
         this.notificationStartStream = new Subject<NotificationStartedInfo>();
+        this.sentUpdatedFunctionContent = new Subject<contentUpdateMessage>();
+        this.recievedUpdatedFunctionContent = new Subject<string>();
+        this.monacoDisabled = new Subject<boolean>();
+
+        // stream of content shown in monaco editor
+        this.sentUpdatedFunctionContent
+            .subscribe(contentMessage => {
+                this.mostRecentContent = contentMessage;                
+                const id = this.windowId;
+                // NOTE: the lock message sends multiple times, it would be preferred for it to send once.
+                this._sendTabMessage(id, TabCommunicationVerbs.lockEditor, contentMessage.resourceId)
+                this._sendContentUpdateMessage(id)
+            });
+
+        // stream of whether the monaco editor should be disabled (if being edited in a different window)
+        this.recievedUpdatedFunctionContent
+            .subscribe(contentMessage => {
+                this.monacoDisabled.next(false);
+            });
 
         if (PortalService.inIFrame()) {
             this.initializeIframe();
@@ -65,7 +87,7 @@ export class PortalService {
 
     private initializeIframe(): void {
 
-        this.iFrameId = Guid.newShortGuid();
+        this.windowId = Guid.newShortGuid();
 
         // listener for localstorage events from any child tabs of the window
         this._storageService.addEventListener(this.recieveStorageMessage, this);
@@ -94,13 +116,10 @@ export class PortalService {
 
         // listener to localStorage
         this._storageService.addEventListener(this.recieveStorageMessage, this);
-
-        if (PortalService.inTab()) {
-            // create own id and set
-            this.tabId = Guid.newTinyGuid();
-            //send id back to parent
-            this._sendTabMessage<null>(this.tabId, TabCommunicationVerbs.getStartInfo, null, null);
-        }
+        // create & set window id
+        this.windowId = Guid.newTinyGuid();
+        // send id & startupinfo request back to parent
+        this._sendTabMessage<null>(this.windowId, TabCommunicationVerbs.getStartInfo, null, null);
     }
 
     private recieveStorageMessage(item: StorageEvent) {
@@ -113,39 +132,52 @@ export class PortalService {
 
         Logger.debug(item);
 
-        if (PortalService.inIFrame()) {
+        if (msg.verb === TabCommunicationVerbs.lockEditor) {
+            // NOTE: lock the editor until updated content is recieved
+            if ((msg.data === this.fileResourceId)) {
+                this.monacoDisabled.next(true);
+            }
+        }
+
+        else if (msg.verb === TabCommunicationVerbs.updatedFile) {
+            //check if file is open, if yes then update
+            const updateInfo: contentUpdateMessage = msg.data;
+
+            if ((updateInfo.resourceId === this.fileResourceId)) {
+                // tell function-dev to update content 
+                this.recievedUpdatedFunctionContent.next(updateInfo.content);
+            }
+        }
+
+        else if (msg.verb === TabCommunicationVerbs.getUpdatedContent && msg.data === this.fileResourceId) {
+            //if changes have been made to the file, send them
+            if (this.monacoDirtyState ) {
+                // HACK: subscribe skipped over when run so for now a local variable is used to tack current state
+                this._sendTabMessage<contentUpdateMessage>(this.windowId, TabCommunicationVerbs.updatedFile, this.mostRecentContent);
+            }
+        }
+
+        else if (PortalService.inIFrame()) {
             // if parent recieved new id call
             const key: string = item.key.split(":")[0];
             if (key === TabCommunicationVerbs.getStartInfo) {
                 let id: string = msg.id;
 
                 // assign self an id to be shared with child
-                if (this.iFrameId === null) {
-                    this.iFrameId = Guid.newTinyGuid();
+                if (this.windowId === null) {
+                    this.windowId = Guid.newTinyGuid();
                 }
                 //send over startupinfo
                 this.sendTabStartupInfo(id);
-            }
-
-            else if (msg.verb === TabCommunicationVerbs.updatedFile) {
-                //check if file is open, if yes then update
             }
         }
 
         else if (PortalService.inTab()) {
             //if the startup message is meant for the child tab
-            if (msg.dest_id === this.tabId && msg.verb === TabCommunicationVerbs.sentStartInfo) {
+            if (msg.dest_id === this.windowId && msg.verb === TabCommunicationVerbs.sentStartInfo) {
                 // get new startup info and update
                 msg.data.resourceId = Url.getParameterByName(null, "rid");
                 this.startupInfoObservable.next(msg.data);
-            }
-
-            else if (msg.verb === TabCommunicationVerbs.updatedFile) {
-                //check if file is open, if yes then update
-            }
-
-            else if (msg.verb === TabCommunicationVerbs.newToken) {
-                // TODO: handle recieved new token
             }
         }
     }
@@ -155,11 +187,11 @@ export class PortalService {
             .take(1)
             .subscribe(info => {
                 const startup: StartupInfo = Object.assign({}, info, { resourceId: '' });
-                this._sendTabMessage<StartupInfo>(this.iFrameId, TabCommunicationVerbs.sentStartInfo, startup, id);
+                this._sendTabMessage<StartupInfo>(this.windowId, TabCommunicationVerbs.sentStartInfo, startup, id);
             })
     }
 
-    private _sendTabMessage<T>(source: string, verb: string, data: T, dest?: string | null) {
+    _sendTabMessage<T>(source: string, verb: string, data: T, dest?: string | null) {
         // return the ready message with guid
         const tabMessage: TabMessage<T> = {
             source_id: source,
@@ -182,6 +214,16 @@ export class PortalService {
 
     sendTimerEvent(evt: TimerEvent) {
         this.postMessage(Verbs.logTimerEvent, JSON.stringify(evt));
+    }
+    
+    //only update information a moment after typing stops
+    private _sendContentUpdateMessage(id) {
+        this.sentUpdatedFunctionContent
+            .debounceTime(500)
+            .subscribe(content => {
+                this._sendTabMessage<contentUpdateMessage>(id, TabCommunicationVerbs.updatedFile, content);
+                Logger.debug("after debounce: content sent")
+            });
     }
 
     openBlade(bladeInfo: OpenBladeInfo, source: string) {

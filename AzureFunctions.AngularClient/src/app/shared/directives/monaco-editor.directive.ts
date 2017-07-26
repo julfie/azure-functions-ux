@@ -5,6 +5,8 @@ import 'rxjs/add/operator/distinctUntilChanged';
 
 import { GlobalStateService } from '../services/global-state.service';
 import { FunctionApp } from '../function-app';
+import { PortalService } from "app/shared/services/portal.service";
+import { Logger } from "app/shared/utilities/logger";
 
 declare var monaco;
 declare var require;
@@ -28,7 +30,8 @@ export class MonacoEditorDirective {
 
     constructor(public elementRef: ElementRef,
         private _globalStateService: GlobalStateService,
-        private _configService: ConfigService
+        private _configService: ConfigService,
+        private _portalService: PortalService
     ) {
 
         this.onContentChanged = new EventEmitter<string>();
@@ -67,7 +70,8 @@ export class MonacoEditorDirective {
     @Input('disabled') set disabled(value: boolean) {
         if (value !== this._disabled) {
             this._disabled = value;
-            if (this._editor) {
+            if (this._editor && this._disabled !== null) {
+                Logger.debug("monaco disabled:" + this._disabled);
                 this._editor.updateOptions({
                     readOnly: this._disabled
                 });
