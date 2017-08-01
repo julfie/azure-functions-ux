@@ -47,7 +47,9 @@ export class TabCommunicationVerbs {
     public static updatedFile = "updated-file-notice"
     public static parentClosed = "parent-window-closed";
     public static lockEditor = "lock-monaco-editor";
-    public static getUpdatedContent = "get-most-updated-content"
+    public static getUpdatedContent = "get-most-updated-content";
+    public static fileOpenElsewhereCheck = "file-open-in-some-other-tab";
+    public static fileIsOpenElsewhere = "file-is-open-in-another-tab"
 }
 
 
@@ -144,7 +146,7 @@ export class KeyCodes {
     public static readonly arrowDown = 40;
 }
 
-export class DomEvents{
+export class DomEvents {
     public static readonly keydown = 'keydown';
     public static readonly click = 'click';
 }

@@ -20,7 +20,18 @@ export interface StartupInfo {
     sessionId: string;
     acceptLanguage: string,
     effectiveLocale: string,
-    resourceId: string
+    resourceId: string,
+    userInfo: UserInfo;
+}
+
+export interface UserInfo {
+    directoryId: string;
+    directoryName: string;
+    domainName: string;
+    email: string;
+    givenName: string;
+    surname: string;
+    uniqueDirectoryName: string;
 }
 
 export interface Action {

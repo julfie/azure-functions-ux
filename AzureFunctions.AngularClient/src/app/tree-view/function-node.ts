@@ -75,31 +75,40 @@ export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposa
         return this.functionInfo;
     }
 
-    public shouldBlockNavChange(): boolean {
+    public shouldBlockNavChange() {
         return FunctionNode.blockNavChangeHelper(this);
     }
 
     public dispose(newSelectedNode?: TreeNode) {
         this.sideNav.broadcastService.clearAllDirtyStates();
         this.parent.dispose(newSelectedNode);
+        this.sideNav.portalService.fileResourceId = null;
     }
 
     public static blockNavChangeHelper(currentNode: TreeNode) {
-        var canSwitchFunction = true;
-        if (currentNode.sideNav.broadcastService.getDirtyState('function')
-            || currentNode.sideNav.broadcastService.getDirtyState('function_integrate')
-            || currentNode.sideNav.broadcastService.getDirtyState('api-proxy')) {
+        let canSwitchFunction = true;
 
-            let descriptor = new FunctionDescriptor(currentNode.resourceId);
+        return currentNode.sideNav.portalService.isFileOpenedInAnotherTab()
+        .mergeMap(isOpen =>{
+            if(isOpen){
+                return Observable.of(false);
+            }
 
-            canSwitchFunction = confirm(currentNode.sideNav.translateService.instant(
-                PortalResources.sideBar_changeMade,
-                {
-                    name: descriptor.functionName
-                }));
-        }
+            if (currentNode.sideNav.broadcastService.getDirtyState('function')
+                || currentNode.sideNav.broadcastService.getDirtyState('function_integrate')
+                || currentNode.sideNav.broadcastService.getDirtyState('api-proxy')) {
 
-        return !canSwitchFunction;
+                let descriptor = new FunctionDescriptor(currentNode.resourceId);
+
+                canSwitchFunction = confirm(currentNode.sideNav.translateService.instant(
+                    PortalResources.sideBar_changeMade,
+                    {
+                        name: descriptor.functionName
+                    }));
+            }
+
+            return Observable.of(!canSwitchFunction);
+        })
     }
 }
 
@@ -127,7 +136,7 @@ export class FunctionEditBaseNode extends TreeNode implements CanBlockNavChange,
         return this.functionInfo;
     }
 
-    public shouldBlockNavChange(): boolean {
+    public shouldBlockNavChange() {
         return FunctionNode.blockNavChangeHelper(this);
     }
 

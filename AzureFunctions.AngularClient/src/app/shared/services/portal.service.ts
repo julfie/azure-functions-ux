@@ -19,6 +19,7 @@ import { TabCommunicationVerbs } from "../models/constants";
 import { FunctionApp } from "app/shared/function-app";
 import { TabMessage, contentUpdateMessage } from "app/shared/models/localStorage/local-storage";
 import { Logger } from "app/shared/utilities/logger";
+import 'rxjs/add/operator/timeout';
 
 @Injectable()
 export class PortalService {
@@ -40,6 +41,7 @@ export class PortalService {
     public monacoDisabled: Subject<boolean>;
     public monacoDirtyState: boolean;
     public mostRecentContent: contentUpdateMessage;
+    private _fileIsOpenObs = new Subject<boolean>();
 
     constructor(private _broadcastService: BroadcastService,
         private _aiService: AiService,
@@ -52,14 +54,28 @@ export class PortalService {
         this.recievedUpdatedFunctionContent = new Subject<string>();
         this.monacoDisabled = new Subject<boolean>();
 
+
+        let lock = false;
         // stream of content shown in monaco editor
         this.sentUpdatedFunctionContent
+            // send one message to lock the other editors while typing
+            .do((contentMessage) => {
+                if (!lock) {
+                    lock = true;
+                    this.mostRecentContent = contentMessage;
+                    const id = this.windowId;
+                    this._sendTabMessage(id, TabCommunicationVerbs.lockEditor, contentMessage.resourceId)
+
+                }
+            })
+            // only send the content update after typing stops for .5 seconds
+            .debounceTime(500)
             .subscribe(contentMessage => {
-                this.mostRecentContent = contentMessage;                
+                lock = false;
+                this.mostRecentContent = contentMessage;
                 const id = this.windowId;
-                // NOTE: the lock message sends multiple times, it would be preferred for it to send once.
-                this._sendTabMessage(id, TabCommunicationVerbs.lockEditor, contentMessage.resourceId)
-                this._sendContentUpdateMessage(id)
+                this._sendTabMessage<contentUpdateMessage>(id, TabCommunicationVerbs.updatedFile, contentMessage);
+
             });
 
         // stream of whether the monaco editor should be disabled (if being edited in a different window)
@@ -68,12 +84,28 @@ export class PortalService {
                 this.monacoDisabled.next(false);
             });
 
+        // initializations
         if (PortalService.inIFrame()) {
             this.initializeIframe();
         }
         else if (PortalService.inTab()) {
             this.initializeTab();
         }
+    }
+
+    public isFileOpenedInAnotherTab() {
+
+        this._sendTabMessage<string>(this.windowId, TabCommunicationVerbs.fileOpenElsewhereCheck, this.fileResourceId);
+        // send message to other tab
+        return this._fileIsOpenObs
+            .timeout(50)
+            .catch(err => {
+                return Observable.of(false);
+            })
+            .map(fileIsOpen => {
+                return fileIsOpen;
+            });
+
     }
 
     getStartupInfo() {
@@ -113,13 +145,10 @@ export class PortalService {
     }
 
     private initializeTab(): void {
-
         // listener to localStorage
         this._storageService.addEventListener(this.recieveStorageMessage, this);
         // create & set window id
         this.windowId = Guid.newTinyGuid();
-        // send id & startupinfo request back to parent
-        this._sendTabMessage<null>(this.windowId, TabCommunicationVerbs.getStartInfo, null, null);
     }
 
     private recieveStorageMessage(item: StorageEvent) {
@@ -130,7 +159,8 @@ export class PortalService {
             return;
         }
 
-        Logger.debug(item);
+        Logger.debug("Msg from other window: " + msg.verb);
+        Logger.verbose("Msg from other window: \n" + item);
 
         if (msg.verb === TabCommunicationVerbs.lockEditor) {
             // NOTE: lock the editor until updated content is recieved
@@ -151,44 +181,21 @@ export class PortalService {
 
         else if (msg.verb === TabCommunicationVerbs.getUpdatedContent && msg.data === this.fileResourceId) {
             //if changes have been made to the file, send them
-            if (this.monacoDirtyState ) {
+            if (this.monacoDirtyState) {
                 // HACK: subscribe skipped over when run so for now a local variable is used to tack current state
                 this._sendTabMessage<contentUpdateMessage>(this.windowId, TabCommunicationVerbs.updatedFile, this.mostRecentContent);
             }
         }
 
-        else if (PortalService.inIFrame()) {
-            // if parent recieved new id call
-            const key: string = item.key.split(":")[0];
-            if (key === TabCommunicationVerbs.getStartInfo) {
-                let id: string = msg.id;
-
-                // assign self an id to be shared with child
-                if (this.windowId === null) {
-                    this.windowId = Guid.newTinyGuid();
-                }
-                //send over startupinfo
-                this.sendTabStartupInfo(id);
-            }
+        // else if file is opened message
+        else if (msg.verb === TabCommunicationVerbs.fileOpenElsewhereCheck && msg.data === this.fileResourceId) {
+            // this._fileIsOpenObs.next(true);
+            this._sendTabMessage<null>(this.windowId, TabCommunicationVerbs.fileIsOpenElsewhere, null);
         }
 
-        else if (PortalService.inTab()) {
-            //if the startup message is meant for the child tab
-            if (msg.dest_id === this.windowId && msg.verb === TabCommunicationVerbs.sentStartInfo) {
-                // get new startup info and update
-                msg.data.resourceId = Url.getParameterByName(null, "rid");
-                this.startupInfoObservable.next(msg.data);
-            }
+        else if (msg.verb === TabCommunicationVerbs.fileIsOpenElsewhere) {
+            this._fileIsOpenObs.next(true);
         }
-    }
-
-    private sendTabStartupInfo(id) {
-        this.getStartupInfo()
-            .take(1)
-            .subscribe(info => {
-                const startup: StartupInfo = Object.assign({}, info, { resourceId: '' });
-                this._sendTabMessage<StartupInfo>(this.windowId, TabCommunicationVerbs.sentStartInfo, startup, id);
-            })
     }
 
     _sendTabMessage<T>(source: string, verb: string, data: T, dest?: string | null) {
@@ -214,16 +221,6 @@ export class PortalService {
 
     sendTimerEvent(evt: TimerEvent) {
         this.postMessage(Verbs.logTimerEvent, JSON.stringify(evt));
-    }
-    
-    //only update information a moment after typing stops
-    private _sendContentUpdateMessage(id) {
-        this.sentUpdatedFunctionContent
-            .debounceTime(500)
-            .subscribe(content => {
-                this._sendTabMessage<contentUpdateMessage>(id, TabCommunicationVerbs.updatedFile, content);
-                Logger.debug("after debounce: content sent")
-            });
     }
 
     openBlade(bladeInfo: OpenBladeInfo, source: string) {

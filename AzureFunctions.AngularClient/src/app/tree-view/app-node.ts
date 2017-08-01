@@ -215,14 +215,20 @@ export class AppNode extends TreeNode implements Disposable, Removable, CustomSe
     }
 
     public handleRefresh(): Observable<any> {
-        if (this.sideNav.selectedNode.shouldBlockNavChange()) {
-            return Observable.of(null);
-        }
+        return this.sideNav.selectedNode.shouldBlockNavChange()
+            .switchMap(shouldBlock => {
+                if (shouldBlock) {
+                    return Observable.of(null);
+                }
 
-        // Make sure there isn't a load operation currently being performed
-        let loadObs = this._loadingObservable ? this._loadingObservable : Observable.of({});
-        return loadObs
-            .mergeMap(() => {
+                // Make sure there isn't a load operation currently being performed
+                return this._loadingObservable ? this._loadingObservable : Observable.of({});
+            })
+            .mergeMap(r => {
+                if(!r){
+                    return;
+                }
+
                 this.sideNav.aiService.trackEvent('/actions/refresh');
                 this._functionApp.fireSyncTrigger();
                 this.sideNav.cacheService.clearCache();

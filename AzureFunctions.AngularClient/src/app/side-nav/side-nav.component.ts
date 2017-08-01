@@ -230,12 +230,35 @@ export class SideNavComponent implements AfterViewInit {
                 return Observable.of(false);
             }
             else {
+                return this.selectedNode.shouldBlockNavChange()
+                // .take(1)  ???
+                .switchMap(block =>{
+                    if(block){
+                        return Observable.of(false);
+                    }
 
-                if (this.selectedNode.shouldBlockNavChange()) {
-                    return Observable.of(false);
-                }
+                    this.selectedNode.dispose(newSelectedNode);
 
-                this.selectedNode.dispose(newSelectedNode);
+                    this._logDashboardTypeChange(this.selectedDashboardType, newDashboardType);
+
+                    this.selectedNode = newSelectedNode;
+                    this.selectedDashboardType = newDashboardType;
+                    this.resourceId = newSelectedNode.resourceId;
+
+                    const viewInfo = <TreeViewInfo<any>>{
+                        resourceId: newSelectedNode.resourceId,
+                        dashboardType: newDashboardType,
+                        node: newSelectedNode,
+                        data: {}
+                    };
+
+                    this.globalStateService.setDisabledMessage(null);
+                    this.treeViewInfoEvent.emit(viewInfo);
+                    this._updateTitle(newSelectedNode);
+                    this.portalService.closeBlades();
+
+                    return newSelectedNode.handleSelection();
+                });
             }
         }
 

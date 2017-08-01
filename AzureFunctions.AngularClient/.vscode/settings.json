@@ -15,11 +15,12 @@
         {
             "text": "HACK:",
             "color": "white",
-            "backgroundColor": "DarkRed"
+            "backgroundColor": "OrangeRed"
         },
         {
             "text": "DEBUG:",
-            "backgroundColor": "OrangeRed"
+            "color": "black",
+            "backgroundColor": "orange"
         },
         {
             "text": "REVIEW:",

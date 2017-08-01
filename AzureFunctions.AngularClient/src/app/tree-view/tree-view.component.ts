@@ -8,6 +8,7 @@ import { DashboardType } from "app/tree-view/models/dashboard-type";
 import { Component, OnInit, EventEmitter, Input, Output, ViewChild, OnChanges, SimpleChange, ElementRef, AfterContentInit } from '@angular/core';
 import { ArmService } from '../shared/services/arm.service';
 import { TreeNode } from './tree-node';
+import { TenantInfo } from "app/shared/models/tenant-info";
 
 @Component({
     selector: 'tree-view',
@@ -138,8 +139,14 @@ export class TreeViewComponent implements OnChanges, AfterContentInit {
         if (window.location.port) {
             windowLocation += `:${window.location.port}`
         }
-        window.open(`https://${windowLocation}/signin?tabbed=true&rid=${this.node.resourceId}`, '_blank');
-
+        let tenantId: string;
+        this._sideNavComponent.userService.getTenants()
+        .first()
+        .subscribe(tenants => {
+            const currentTenant: TenantInfo = tenants.find(t => t.Current);
+            tenantId = currentTenant.TenantId
+            window.open(`https://${windowLocation}/signin?/api/switchtenant/${tenantId}/?tabbed=true&rid=${this.node.resourceId}`, '_blank');
+        });
         // keeping clicking the 'new tab' button from also opening the function in the portal
         event.stopPropagation();
     }

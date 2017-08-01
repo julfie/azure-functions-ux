@@ -57,7 +57,7 @@ export class ProxyNode extends TreeNode implements CanBlockNavChange, Disposable
         return this.proxy;
     }
 
-    public shouldBlockNavChange(): boolean {
+    public shouldBlockNavChange() {
         return ProxyNode.blockNavChangeHelper(this);
     }
 

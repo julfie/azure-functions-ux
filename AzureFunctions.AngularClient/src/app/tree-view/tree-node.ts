@@ -28,7 +28,7 @@ export interface Refreshable {
 
 export interface CanBlockNavChange {
     // Give a node a chance to prevent a user from navigating away
-    shouldBlockNavChange(): boolean;
+    shouldBlockNavChange(): Observable<boolean>;
 }
 
 export interface Collection {
@@ -198,8 +198,8 @@ export class TreeNode implements Disposable, Removable, CanBlockNavChange, Custo
         }
     }
 
-    public shouldBlockNavChange(): boolean {
-        return false;
+    public shouldBlockNavChange(): Observable<boolean> {
+        return Observable.of(false);
     }
 
     public loadChildren(): Observable<any> {

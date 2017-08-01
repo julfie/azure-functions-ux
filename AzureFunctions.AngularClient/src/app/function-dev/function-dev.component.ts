@@ -92,7 +92,6 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
     public masterKey: string;
 
     public isStandalone: boolean;
-    public inTab: boolean;
 
     public disabled: Observable<boolean>;
 
@@ -103,7 +102,6 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
     private autoSelectAdminKey: boolean;
     private functionKey: string;
     private _bindingManager = new BindingManager();
-    // private updatedContentStream: Subject<string>;
 
     private _isClientCertEnabled = false;
     constructor(private _broadcastService: BroadcastService,
@@ -116,9 +114,6 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
 
         this.functionInvokeUrl = this._translateService.instant(PortalResources.functionDev_loading);
         this.isStandalone = configService.isStandalone();
-        this.inTab = PortalService.inTab();
-
-        // this.updatedContentStream = new Subject<string>();
 
         this.selectedFileStream = new Subject<VfsObject>();
         this.selectedFileStream
@@ -213,6 +208,10 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
                 this.updateKeys();
 
                 this.isHttpFunction = BindingManager.isHttpFunction(this.functionInfo);
+
+                this._portalService.fileResourceId = `${this.functionApp.site.id}/functions/${this.functionInfo.name}/files/${this.fileName}`;
+                // ask for updated info if changes have been made to the file
+                this._portalService._sendTabMessage(this._portalService.windowId, TabCommunicationVerbs.getUpdatedContent, this._portalService.fileResourceId)
 
                 setTimeout(() => {
                     this.onResize();
