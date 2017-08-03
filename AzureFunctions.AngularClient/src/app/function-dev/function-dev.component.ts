@@ -548,6 +548,7 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
             resourceId: this._portalService.fileResourceId,
             content: content
         };
+        this._portalService.mostRecentContent = contentMessage;
         // update the new content
         this._portalService.sentUpdatedFunctionContent.next(contentMessage)
     }
@@ -560,6 +561,13 @@ export class FunctionDevComponent implements OnChanges, OnDestroy {
 
         this.updatedContent = content;
         this.content = content;
+
+        const contentMessage: contentUpdateMessage = {
+            // HACK: portalservice is global and you should not be pulling the resource from there
+            resourceId: this._portalService.fileResourceId,
+            content: this.content
+        };
+        this._portalService.mostRecentContent = contentMessage;
     }
 
     testContentChanged(content: string) {

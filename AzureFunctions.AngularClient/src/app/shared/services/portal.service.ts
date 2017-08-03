@@ -175,6 +175,7 @@ export class PortalService {
 
             if ((updateInfo.resourceId === this.fileResourceId)) {
                 // tell function-dev to update content 
+                Logger.debug("update information recieved: " + updateInfo.content)
                 this.recievedUpdatedFunctionContent.next(updateInfo.content);
             }
         }
@@ -182,6 +183,7 @@ export class PortalService {
         else if (msg.verb === TabCommunicationVerbs.getUpdatedContent && msg.data === this.fileResourceId) {
             //if changes have been made to the file, send them
             if (this.monacoDirtyState) {
+                Logger.debug("update information sent: " + this.mostRecentContent.content);
                 // HACK: subscribe skipped over when run so for now a local variable is used to tack current state
                 this._sendTabMessage<contentUpdateMessage>(this.windowId, TabCommunicationVerbs.updatedFile, this.mostRecentContent);
             }
@@ -191,10 +193,12 @@ export class PortalService {
         else if (msg.verb === TabCommunicationVerbs.fileOpenElsewhereCheck && msg.data === this.fileResourceId) {
             // this._fileIsOpenObs.next(true);
             this._sendTabMessage<null>(this.windowId, TabCommunicationVerbs.fileIsOpenElsewhere, null);
+            Logger.debug("responded to request if file is open in another window")            
         }
 
         else if (msg.verb === TabCommunicationVerbs.fileIsOpenElsewhere) {
             this._fileIsOpenObs.next(true);
+            Logger.debug("discovered file is open in another window")
         }
     }
 

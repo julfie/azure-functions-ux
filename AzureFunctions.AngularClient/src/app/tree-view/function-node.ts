@@ -15,6 +15,7 @@ import {BroadcastEvent} from '../shared/models/broadcast-event';
 import {PortalResources} from '../shared/models/portal-resources';
 import {FunctionInfo} from '../shared/models/function-info';
 import { Url } from "app/shared/Utilities/url";
+import { Logger } from "app/shared/utilities/logger";
 
 export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposable, CustomSelection {
     public dashboardType = DashboardType.function;
@@ -82,12 +83,15 @@ export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposa
     public dispose(newSelectedNode?: TreeNode) {
         this.sideNav.broadcastService.clearAllDirtyStates();
         this.parent.dispose(newSelectedNode);
+        
+        // TODO: FIX THIS
         this.sideNav.portalService.fileResourceId = null;
     }
 
     public static blockNavChangeHelper(currentNode: TreeNode) {
         let canSwitchFunction = true;
 
+        Logger.debug("asking if file is open in another window")
         return currentNode.sideNav.portalService.isFileOpenedInAnotherTab()
         .mergeMap(isOpen =>{
             if(isOpen){
