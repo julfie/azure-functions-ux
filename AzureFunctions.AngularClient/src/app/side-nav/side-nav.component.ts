@@ -102,7 +102,7 @@ export class SideNavComponent implements AfterViewInit {
         userService.getStartupInfo().subscribe(info => {
 
             var sitenameIncoming = !!info.resourceId ? SiteDescriptor.getSiteDescriptor(info.resourceId).site.toLocaleLowerCase() : null;
-            var initialSiteName = !! this.initialResourceId ? SiteDescriptor.getSiteDescriptor(this.initialResourceId).site.toLocaleLowerCase() : null;
+            var initialSiteName = !!this.initialResourceId ? SiteDescriptor.getSiteDescriptor(this.initialResourceId).site.toLocaleLowerCase() : null;
             if (sitenameIncoming !== initialSiteName) {
                 this.portalService.sendTimerEvent({
                     timerId: 'TreeViewLoad',
@@ -231,34 +231,34 @@ export class SideNavComponent implements AfterViewInit {
             }
             else {
                 return this.selectedNode.shouldBlockNavChange()
-                // .take(1)  ???
-                .switchMap(block =>{
-                    if(block){
-                        return Observable.of(false);
-                    }
+                    // .take(1)  ???
+                    .switchMap(block => {
+                        if (block) {
+                            return Observable.of(false);
+                        }
 
-                    this.selectedNode.dispose(newSelectedNode);
+                        this.selectedNode.dispose(newSelectedNode);
 
-                    this._logDashboardTypeChange(this.selectedDashboardType, newDashboardType);
+                        this._logDashboardTypeChange(this.selectedDashboardType, newDashboardType);
 
-                    this.selectedNode = newSelectedNode;
-                    this.selectedDashboardType = newDashboardType;
-                    this.resourceId = newSelectedNode.resourceId;
+                        this.selectedNode = newSelectedNode;
+                        this.selectedDashboardType = newDashboardType;
+                        this.resourceId = newSelectedNode.resourceId;
 
-                    const viewInfo = <TreeViewInfo<any>>{
-                        resourceId: newSelectedNode.resourceId,
-                        dashboardType: newDashboardType,
-                        node: newSelectedNode,
-                        data: {}
-                    };
+                        const viewInfo = <TreeViewInfo<any>>{
+                            resourceId: newSelectedNode.resourceId,
+                            dashboardType: newDashboardType,
+                            node: newSelectedNode,
+                            data: {}
+                        };
 
-                    this.globalStateService.setDisabledMessage(null);
-                    this.treeViewInfoEvent.emit(viewInfo);
-                    this._updateTitle(newSelectedNode);
-                    this.portalService.closeBlades();
+                        this.globalStateService.setDisabledMessage(null);
+                        this.treeViewInfoEvent.emit(viewInfo);
+                        this._updateTitle(newSelectedNode);
+                        this.portalService.closeBlades();
 
-                    return newSelectedNode.handleSelection();
-                });
+                        return newSelectedNode.handleSelection();
+                    });
             }
         }
 

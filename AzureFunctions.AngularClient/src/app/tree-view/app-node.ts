@@ -225,7 +225,7 @@ export class AppNode extends TreeNode implements Disposable, Removable, CustomSe
                 return this._loadingObservable ? this._loadingObservable : Observable.of({});
             })
             .mergeMap(r => {
-                if(!r){
+                if (!r) {
                     return;
                 }
 

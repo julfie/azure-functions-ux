@@ -74,7 +74,7 @@ export class MonacoEditorDirective {
         if (value !== this._disabled) {
             this._disabled = value;
             if (this._editor && this._disabled !== null) {
-                Logger.debug("monaco disabled:" + this._disabled);
+                Logger.debug("monaco disabled: " + this._disabled);
                 this._editor.updateOptions({
                     readOnly: this._disabled
                 });
@@ -203,7 +203,6 @@ export class MonacoEditorDirective {
                             // TODO: there is likely a better way to grab the rId than through the portal service
                             window.open(`https://${windowLocation}/signin?/api/switchtenant/?${tenantId}/?tabbed=true&rid=${that._portalService.fileResourceId}`, '_blank');
                         });
-                    Logger.verbose("opening function through: " + windowLocation);
                 });
 
                 that._globalStateService.clearBusyState();

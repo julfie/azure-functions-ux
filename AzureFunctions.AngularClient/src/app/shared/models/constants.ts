@@ -48,8 +48,9 @@ export class TabCommunicationVerbs {
     public static parentClosed = "parent-window-closed";
     public static lockEditor = "lock-monaco-editor";
     public static getUpdatedContent = "get-most-updated-content";
-    public static fileOpenElsewhereCheck = "file-open-in-some-other-tab";
-    public static fileIsOpenElsewhere = "file-is-open-in-another-tab"
+    public static fileOpenElsewhereCheck = "is-file-open-some-other-tab";
+    public static fileIsOpenElsewhere = "file-is-open-in-another-tab";
+    public static fileSaved = "file-has-been-saved-in-another-tab";
 }
 
 

@@ -15,9 +15,8 @@ import { SetupOAuthRequest, SetupOAuthResponse } from '../../site/deployment-sou
 import { LocalStorageService } from './local-storage.service';
 import { SiteDescriptor, FunctionDescriptor } from "../resourceDescriptors";
 import { Guid } from "../Utilities/Guid";
-import { TabCommunicationVerbs } from "../models/constants";
-import { FunctionApp } from "app/shared/function-app";
-import { TabMessage, contentUpdateMessage } from "app/shared/models/localStorage/local-storage";
+import { TabCommunicationVerbs } from "app/shared/models/constants";
+import { TabMessage } from "app/shared/models/localStorage/local-storage";
 import { Logger } from "app/shared/utilities/logger";
 import 'rxjs/add/operator/timeout';
 
@@ -36,11 +35,7 @@ export class PortalService {
     private shellSrc: string;
     private notificationStartStream: Subject<NotificationStartedInfo>;
     private localStorage: Storage;
-    public recievedUpdatedFunctionContent: Subject<string>;
-    public sentUpdatedFunctionContent: Subject<contentUpdateMessage>;
-    public monacoDisabled: Subject<boolean>;
-    public monacoDirtyState: boolean;
-    public mostRecentContent: contentUpdateMessage;
+    public storageMessageStream: Subject<TabMessage<any>>;
     private _fileIsOpenObs = new Subject<boolean>();
 
     constructor(private _broadcastService: BroadcastService,
@@ -50,62 +45,14 @@ export class PortalService {
         this.startupInfoObservable = new ReplaySubject<StartupInfo>(1);
         this.setupOAuthObservable = new Subject<SetupOAuthResponse>();
         this.notificationStartStream = new Subject<NotificationStartedInfo>();
-        this.sentUpdatedFunctionContent = new Subject<contentUpdateMessage>();
-        this.recievedUpdatedFunctionContent = new Subject<string>();
-        this.monacoDisabled = new Subject<boolean>();
+        this.storageMessageStream = new Subject<TabMessage<any>>();
 
-
-        let lock = false;
-        // stream of content shown in monaco editor
-        this.sentUpdatedFunctionContent
-            // send one message to lock the other editors while typing
-            .do((contentMessage) => {
-                if (!lock) {
-                    lock = true;
-                    this.mostRecentContent = contentMessage;
-                    const id = this.windowId;
-                    this._sendTabMessage(id, TabCommunicationVerbs.lockEditor, contentMessage.resourceId)
-
-                }
-            })
-            // only send the content update after typing stops for .5 seconds
-            .debounceTime(500)
-            .subscribe(contentMessage => {
-                lock = false;
-                this.mostRecentContent = contentMessage;
-                const id = this.windowId;
-                this._sendTabMessage<contentUpdateMessage>(id, TabCommunicationVerbs.updatedFile, contentMessage);
-
-            });
-
-        // stream of whether the monaco editor should be disabled (if being edited in a different window)
-        this.recievedUpdatedFunctionContent
-            .subscribe(contentMessage => {
-                this.monacoDisabled.next(false);
-            });
-
-        // initializations
         if (PortalService.inIFrame()) {
             this.initializeIframe();
         }
         else if (PortalService.inTab()) {
             this.initializeTab();
         }
-    }
-
-    public isFileOpenedInAnotherTab() {
-
-        this._sendTabMessage<string>(this.windowId, TabCommunicationVerbs.fileOpenElsewhereCheck, this.fileResourceId);
-        // send message to other tab
-        return this._fileIsOpenObs
-            .timeout(50)
-            .catch(err => {
-                return Observable.of(false);
-            })
-            .map(fileIsOpen => {
-                return fileIsOpen;
-            });
-
     }
 
     getStartupInfo() {
@@ -152,7 +99,6 @@ export class PortalService {
     }
 
     private recieveStorageMessage(item: StorageEvent) {
-
         const msg: TabMessage<any> = JSON.parse(item.newValue);
 
         if (!msg) {
@@ -160,45 +106,16 @@ export class PortalService {
         }
 
         Logger.debug("Msg from other window: " + msg.verb);
-        Logger.verbose("Msg from other window: \n" + item);
 
-        if (msg.verb === TabCommunicationVerbs.lockEditor) {
-            // NOTE: lock the editor until updated content is recieved
-            if ((msg.data === this.fileResourceId)) {
-                this.monacoDisabled.next(true);
-            }
-        }
-
-        else if (msg.verb === TabCommunicationVerbs.updatedFile) {
-            //check if file is open, if yes then update
-            const updateInfo: contentUpdateMessage = msg.data;
-
-            if ((updateInfo.resourceId === this.fileResourceId)) {
-                // tell function-dev to update content 
-                Logger.debug("update information recieved: " + updateInfo.content)
-                this.recievedUpdatedFunctionContent.next(updateInfo.content);
-            }
-        }
-
-        else if (msg.verb === TabCommunicationVerbs.getUpdatedContent && msg.data === this.fileResourceId) {
-            //if changes have been made to the file, send them
-            if (this.monacoDirtyState) {
-                Logger.debug("update information sent: " + this.mostRecentContent.content);
-                // HACK: subscribe skipped over when run so for now a local variable is used to tack current state
-                this._sendTabMessage<contentUpdateMessage>(this.windowId, TabCommunicationVerbs.updatedFile, this.mostRecentContent);
-            }
-        }
-
-        // else if file is opened message
-        else if (msg.verb === TabCommunicationVerbs.fileOpenElsewhereCheck && msg.data === this.fileResourceId) {
-            // this._fileIsOpenObs.next(true);
-            this._sendTabMessage<null>(this.windowId, TabCommunicationVerbs.fileIsOpenElsewhere, null);
-            Logger.debug("responded to request if file is open in another window")            
-        }
-
-        else if (msg.verb === TabCommunicationVerbs.fileIsOpenElsewhere) {
-            this._fileIsOpenObs.next(true);
+        // file is open in another window
+        if (msg.verb === TabCommunicationVerbs.fileIsOpenElsewhere) {
             Logger.debug("discovered file is open in another window")
+            this._fileIsOpenObs.next(true);
+        }
+
+        else {
+            // send it to be handled by function dev
+            this.storageMessageStream.next(msg);
         }
     }
 
@@ -221,6 +138,19 @@ export class PortalService {
         // include the id in the key so that douplicate messages from different windows can not remove another
         this._storageService.setItem(verb, tabMessage);
         this._storageService.removeItem(verb);
+    }
+
+    public isFileOpenedInAnotherTab() {
+        this._sendTabMessage<string>(this.windowId, TabCommunicationVerbs.fileOpenElsewhereCheck, this.fileResourceId);
+        // send message to other tab
+        return this._fileIsOpenObs
+            .timeout(50)
+            .catch(err => {
+                return Observable.of(false);
+            })
+            .map(fileIsOpen => {
+                return fileIsOpen;
+            });
     }
 
     sendTimerEvent(evt: TimerEvent) {

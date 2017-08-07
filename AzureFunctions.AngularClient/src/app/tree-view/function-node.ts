@@ -10,10 +10,10 @@ import { SideNavComponent } from '../side-nav/side-nav.component';
 import { DashboardType } from './models/dashboard-type';
 import { Site } from '../shared/models/arm/site';
 import { ArmObj } from '../shared/models/arm/arm-obj';
-import {FunctionContainer} from '../shared/models/function-container';
-import {BroadcastEvent} from '../shared/models/broadcast-event';
-import {PortalResources} from '../shared/models/portal-resources';
-import {FunctionInfo} from '../shared/models/function-info';
+import { FunctionContainer } from '../shared/models/function-container';
+import { BroadcastEvent } from '../shared/models/broadcast-event';
+import { PortalResources } from '../shared/models/portal-resources';
+import { FunctionInfo } from '../shared/models/function-info';
 import { Url } from "app/shared/Utilities/url";
 import { Logger } from "app/shared/utilities/logger";
 
@@ -83,36 +83,36 @@ export class FunctionNode extends TreeNode implements CanBlockNavChange, Disposa
     public dispose(newSelectedNode?: TreeNode) {
         this.sideNav.broadcastService.clearAllDirtyStates();
         this.parent.dispose(newSelectedNode);
-        
+
         // TODO: FIX THIS
-        this.sideNav.portalService.fileResourceId = null;
+        // this.sideNav.portalService.fileResourceId = null;
     }
 
     public static blockNavChangeHelper(currentNode: TreeNode) {
         let canSwitchFunction = true;
 
-        Logger.debug("asking if file is open in another window")
+        Logger.debug("asking if file is open in another window");
         return currentNode.sideNav.portalService.isFileOpenedInAnotherTab()
-        .mergeMap(isOpen =>{
-            if(isOpen){
-                return Observable.of(false);
-            }
+            .mergeMap(isOpen => {
+                if (isOpen) {
+                    return Observable.of(false);
+                }
 
-            if (currentNode.sideNav.broadcastService.getDirtyState('function')
-                || currentNode.sideNav.broadcastService.getDirtyState('function_integrate')
-                || currentNode.sideNav.broadcastService.getDirtyState('api-proxy')) {
+                if (currentNode.sideNav.broadcastService.getDirtyState('function')
+                    || currentNode.sideNav.broadcastService.getDirtyState('function_integrate')
+                    || currentNode.sideNav.broadcastService.getDirtyState('api-proxy')) {
 
-                let descriptor = new FunctionDescriptor(currentNode.resourceId);
+                    let descriptor = new FunctionDescriptor(currentNode.resourceId);
 
-                canSwitchFunction = confirm(currentNode.sideNav.translateService.instant(
-                    PortalResources.sideBar_changeMade,
-                    {
-                        name: descriptor.functionName
-                    }));
-            }
+                    canSwitchFunction = confirm(currentNode.sideNav.translateService.instant(
+                        PortalResources.sideBar_changeMade,
+                        {
+                            name: descriptor.functionName
+                        }));
+                }
 
-            return Observable.of(!canSwitchFunction);
-        })
+                return Observable.of(!canSwitchFunction);
+            })
     }
 }
 
